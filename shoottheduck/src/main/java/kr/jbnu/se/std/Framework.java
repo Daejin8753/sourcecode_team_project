@@ -331,7 +331,6 @@ public class Framework extends Canvas{
         }
     }
 
-
     /**
      * This method is called when mouse button is clicked.
      *
