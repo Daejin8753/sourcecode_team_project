@@ -1,5 +1,6 @@
 package kr.jbnu.se.std;
 
+
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
@@ -17,7 +18,7 @@ import javax.imageio.ImageIO;
 
 /**
  * Actual game.
- * 
+ *
  * @author www.gametutorial.net
  */
 
@@ -28,41 +29,41 @@ public class Game {
      * We use this to generate a random number.
      */
     private Random random;
-    
+
     /**
      * Font that we will use to write statistic to the screen.
      */
     private Font font;
-    
+
     /**
      * Array list of the ducks.
      */
     private ArrayList<Duck> ducks;
-    
+
     /**
      * How many ducks leave the screen alive?
      */
     private int runawayDucks;
-    
-   /**
+
+    /**
      * How many ducks the player killed?
      */
     private int killedDucks;
-    
+
     /**
      * For each killed duck, the player gets points.
      */
     private int score;
-    
-   /**
+
+    /**
      * How many times a player is shot?
      */
     private int shoots;
-    
+
     /**
      * Last time of the shoot.
      */
-    private long lastTimeShoot;    
+    private long lastTimeShoot;
     /**
      * The time which must elapse between shots.
      */
@@ -72,22 +73,22 @@ public class Game {
      * kr.jbnu.se.std.Game background image.
      */
     private BufferedImage backgroundImg;
-    
+
     /**
      * Bottom grass.
      */
     private BufferedImage grassImg;
-    
+
     /**
      * kr.jbnu.se.std.Duck image.
      */
     private BufferedImage duckImg;
-    
+
     /**
      * Shotgun sight image.
      */
     private BufferedImage sightImg;
-    
+
     /**
      * Middle width of the sight image.
      */
@@ -117,7 +118,7 @@ public class Game {
         LoadContent();
 
         Framework.gameState = Framework.GameState.GAME_CONTENT_LOADING;
-        
+
         Thread threadForInitGame = new Thread() {
             @Override
             public void run(){
@@ -125,24 +126,24 @@ public class Game {
                 Initialize();
                 // Load game files (images, sounds, ...)
                 LoadContent();
-                
+
                 Framework.gameState = Framework.GameState.PLAYING;
             }
         };
         threadForInitGame.start();
     }
-    
-    
-   /**
+
+
+    /**
      * Set variables and objects for the game.
      */
     private void Initialize()
     {
-        random = new Random();        
+        random = new Random();
         font = new Font("monospaced", Font.BOLD, 18);
-        
+
         ducks = new ArrayList<Duck>();
-        
+
         runawayDucks = 0;
         killedDucks = 0;
         score = 0;
@@ -155,7 +156,7 @@ public class Game {
         difficultyLevel = 0;
     }
     private void AdjustDuckSpawnTime() {
-        Duck.timeBetweenDucks = duckSpawnTimes[difficultyLevel]; // 현재 난이도에 따른 오리 출현 시간 설정
+        Duck.timeBetweenDucks = duckSpawnTimes[difficultyLevel] * 2; // 현재 난이도에 따른 오리 출현 시간 설정
     }
 
 
@@ -168,13 +169,13 @@ public class Game {
         {
             URL backgroundImgUrl = this.getClass().getResource("/images/background.jpg");
             backgroundImg = ImageIO.read(backgroundImgUrl);
-            
+
             URL grassImgUrl = this.getClass().getResource("/images/grass.png");
             grassImg = ImageIO.read(grassImgUrl);
-            
+
             URL duckImgUrl = this.getClass().getResource("/images/duck.png");
             duckImg = ImageIO.read(duckImgUrl);
-            
+
             URL sightImgUrl = this.getClass().getResource("/images/sight.png");
 
             duckImg = ImageIO.read(duckImgUrl);
@@ -191,8 +192,8 @@ public class Game {
             Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
-    
+
+
     /**
      * Restart game - reset some variables.
      */
@@ -200,22 +201,29 @@ public class Game {
     {
         // Removes all of the ducks from this list.
         ducks.clear();
-        
+
         // We set last duckt time to zero.
         Duck.lastDuckTime = 0;
-        
+
         runawayDucks = 0;
         killedDucks = 0;
         score = 0;
         shoots = 0;
-        
+
         lastTimeShoot = 0;
     }
-    
-    
+    private int getMaxDucksByDifficulty() {
+        switch(difficultyLevel) {
+            case 0: return 3;  // 쉬운 난이도에서 최대 3마리
+            case 1: return 4;  // 중간 난이도에서 최대 4마리
+            case 2: return 5;  // 어려운 난이도에서 최대 5마리
+            case 3: return 6;  // 매우 어려운 난이도에서 최대 6마리
+            default: return 5; // 기본적으로 5마리 제한
+        }
+    }
     /**
      * Update game logic.
-     * 
+     *
      * @param gameTime gameTime of the game.
      * @param mousePosition current mouse position.
      */
@@ -223,7 +231,7 @@ public class Game {
     {
         AdjustDuckSpawnTime(); // 난이도에 따른 오리 출현 간격 조정
 
-        if(System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks) {
+        if (ducks.size() < 5 && System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks) {
             int direction = random.nextInt(2);  // 0이면 오른쪽 -> 왼쪽, 1이면 왼쪽 -> 오른쪽
             int startX, speed;
             if (direction == 0) {  // 오른쪽에서 왼쪽으로 이동
@@ -236,13 +244,13 @@ public class Game {
 
             ducks.add(new Duck(startX, Duck.duckLines[Duck.nextDuckLines][1], speed, Duck.duckLines[Duck.nextDuckLines][3], duckImg));
 
-            if(random.nextInt(10) < 5) {  // 80% 확률로 일반 오리 생성
+            if (random.nextInt(10) < 5) {  // 80% 확률로 일반 오리 생성
                 ducks.add(new Duck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200),
                         Duck.duckLines[Duck.nextDuckLines][1],
                         Duck.duckLines[Duck.nextDuckLines][2],
                         Duck.duckLines[Duck.nextDuckLines][3],
                         duckImg));
-            } else if(random.nextInt(10)<2){  // 20% 확률로 BadDuck 생성
+            } else if (random.nextInt(10) < 2) {  // 20% 확률로 BadDuck 생성
                 ducks.add(new BadDuck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200),
                         Duck.duckLines[Duck.nextDuckLines][1],
                         Duck.duckLines[Duck.nextDuckLines][2],
@@ -250,11 +258,11 @@ public class Game {
                         badDuckImg));
             } else {
                 // 20% 확률로 힘센 오리 생성
-                ducks.add(new StrongDuck(startX, Duck.duckLines[Duck.nextDuckLines][1], speed, Duck.duckLines[Duck.nextDuckLines][3],duckImg));
+                ducks.add(new StrongDuck(startX, Duck.duckLines[Duck.nextDuckLines][1], speed, Duck.duckLines[Duck.nextDuckLines][3], duckImg));
             }
 
             Duck.nextDuckLines++;
-            if(Duck.nextDuckLines >= Duck.duckLines.length)
+            if (Duck.nextDuckLines >= Duck.duckLines.length)
                 Duck.nextDuckLines = 0;
 
             Duck.lastDuckTime = System.nanoTime();
@@ -264,21 +272,21 @@ public class Game {
         {
             // Here we create new duck and add it to the array list.
             ducks.add(new Duck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200), Duck.duckLines[Duck.nextDuckLines][1], Duck.duckLines[Duck.nextDuckLines][2], Duck.duckLines[Duck.nextDuckLines][3], duckImg));
-            
+
             // Here we increase nextDuckLines so that next duck will be created in next line.
             Duck.nextDuckLines++;
             if(Duck.nextDuckLines >= Duck.duckLines.length)
                 Duck.nextDuckLines = 0;
-            
+
             Duck.lastDuckTime = System.nanoTime();
         }
-        
+
         // Update all of the ducks.
         for(int i = 0; i < ducks.size(); i++)
         {
             // Move the duck.
             ducks.get(i).Update();
-            
+
             // Checks if the duck leaves the screen and remove it if it does.
             if(ducks.get(i).x < 0 - duckImg.getWidth())
             {
@@ -286,7 +294,7 @@ public class Game {
                 runawayDucks++;
             }
         }
-        
+
         // Does player shoots?
         if(Canvas.mouseButtonState(MouseEvent.BUTTON1))
         {
@@ -295,14 +303,14 @@ public class Game {
             {
                 boolean hit = false;
                 shoots++;
-                
+
                 // We go over all the ducks and we look if any of them was shoot.
                 for(int i = 0; i < ducks.size(); i++)
                 {
                     Duck currentDuck = ducks.get(i);
                     // We check, if the mouse was over ducks head or body, when player has shot.
                     if(new Rectangle(ducks.get(i).x + 18, ducks.get(i).y     , 27, 30).contains(mousePosition) ||
-                       new Rectangle(ducks.get(i).x + 30, ducks.get(i).y + 30, 88, 25).contains(mousePosition))
+                            new Rectangle(ducks.get(i).x + 30, ducks.get(i).y + 30, 88, 25).contains(mousePosition))
                     {
                         killedDucks++;
                         killCount++;
@@ -330,11 +338,11 @@ public class Game {
                         }
                         score += currentDuck.score;
                         score += ducks.get(i).score;
-                        
+
                         // Remove the duck from the array list.
                         ducks.remove(i);
                         hit = true;
-                        
+
                         // We found the duck that player shoot so we can leave the for loop.
                         break;
                     }
@@ -343,59 +351,59 @@ public class Game {
                     miss++;
                     score -= 10;
                 }
-                
+
                 lastTimeShoot = System.nanoTime();
             }
         }
         if (score >= 50 && difficultyLevel < 4) {
             difficultyLevel++; // 점수가 50 이상일 때 난이도 증가
         }
-        
+
         // When 200 ducks runaway, the game ends.
         if(runawayDucks >= 200)
             Framework.gameState = Framework.GameState.GAMEOVER;
     }
-    
+
     /**
      * Draw the game to the screen.
-     * 
+     *
      * @param g2d Graphics2D
      * @param mousePosition current mouse position.
      */
     public void Draw(Graphics2D g2d, Point mousePosition)
     {
         g2d.drawImage(backgroundImg, 0, 0, Framework.frameWidth, Framework.frameHeight, null);
-        
+
         // Here we draw all the ducks.
         for(int i = 0; i < ducks.size(); i++)
         {
             ducks.get(i).Draw(g2d);
         }
-        
+
         g2d.drawImage(grassImg, 0, Framework.frameHeight - grassImg.getHeight(), Framework.frameWidth, grassImg.getHeight(), null);
-        
+
         g2d.drawImage(sightImg, mousePosition.x - sightImgMiddleWidth, mousePosition.y - sightImgMiddleHeight, null);
-        
+
         g2d.setFont(font);
         g2d.setColor(Color.darkGray);
-        
+
         g2d.drawString("RUNAWAY: " + runawayDucks, 10, 21);
         g2d.drawString("KILLS: " + killedDucks, 160, 21);
         g2d.drawString("MISS: " + miss, 299, 21);
         g2d.drawString("SCORE: " + score, 440, 21);
     }
-    
-    
+
+
     /**
      * Draw the game over screen.
-     * 
+     *
      * @param g2d Graphics2D
      * @param mousePosition Current mouse position.
      */
     public void DrawGameOver(Graphics2D g2d, Point mousePosition)
     {
         Draw(g2d, mousePosition);
-        
+
         // The first text is used for shade.
         g2d.setColor(Color.black);
         g2d.drawString("kr.jbnu.se.std.Game Over", Framework.frameWidth / 2 - 39, (int)(Framework.frameHeight * 0.65) + 1);
