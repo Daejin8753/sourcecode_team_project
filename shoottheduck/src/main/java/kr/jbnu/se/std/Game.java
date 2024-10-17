@@ -1,6 +1,5 @@
 package kr.jbnu.se.std;
 
-
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
@@ -23,6 +22,7 @@ import javax.imageio.ImageIO;
  */
 
 public class Game {
+
 
     private BufferedImage badDuckImg;
     /**
@@ -108,6 +108,10 @@ public class Game {
 
     private int miss;
 
+    private boolean isFeverTimeActive; // 피버타임 활성화 여부
+    private long feverStartTime; // 피버타임 시작 시간
+    private long feverDuration = 5000; // 피버타임 지속 시간 (밀리초 단위)
+
 
 
 
@@ -154,9 +158,10 @@ public class Game {
         lastTimeShoot = 0;
         timeBetweenShots = Framework.secInNanosec / 3;
         difficultyLevel = 0;
+
     }
     private void AdjustDuckSpawnTime() {
-        Duck.timeBetweenDucks = duckSpawnTimes[difficultyLevel] * 2; // 현재 난이도에 따른 오리 출현 시간 설정
+        Duck.timeBetweenDucks = duckSpawnTimes[difficultyLevel]*2; // 현재 난이도에 따른 오리 출현 시간 설정
     }
 
 
@@ -221,6 +226,8 @@ public class Game {
             default: return 5; // 기본적으로 5마리 제한
         }
     }
+
+
     /**
      * Update game logic.
      *
@@ -231,41 +238,74 @@ public class Game {
     {
         AdjustDuckSpawnTime(); // 난이도에 따른 오리 출현 간격 조정
 
-        if (ducks.size() < 5 && System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks) {
-            int direction = random.nextInt(2);  // 0이면 오른쪽 -> 왼쪽, 1이면 왼쪽 -> 오른쪽
-            int startX, speed;
-            if (direction == 0) {  // 오른쪽에서 왼쪽으로 이동
-                startX = Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200); // 기존과 동일하게 오른쪽에서 출발
-                speed = Duck.duckLines[Duck.nextDuckLines][2];  // 음수 속도 (왼쪽으로 이동)
-            } else {  // 왼쪽에서 오른쪽으로 이동
-                startX = 0 - random.nextInt(200);  // 왼쪽에서 출발
-                speed = -Duck.duckLines[Duck.nextDuckLines][2];  // 양수 속도 (오른쪽으로 이동)
+        if (killCount >= 5 && runawayDucks<=0 && !isFeverTimeActive) {
+            isFeverTimeActive = true;
+            feverStartTime = System.nanoTime();
+            timeBetweenShots = 0; // 사격 딜레이 없애기
+        }
+
+        // 피버타임 동안 오리 출현 빈도 조정
+        if (isFeverTimeActive) {
+            if (System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks / 2) {
+                int direction = random.nextInt(2);
+                int startX, speed;
+                if (direction == 0) {
+                    startX = Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200);
+                    speed = Duck.duckLines[Duck.nextDuckLines][2];
+                } else {
+                    startX = 0 - random.nextInt(200);
+                    speed = -Duck.duckLines[Duck.nextDuckLines][2];
+                }
+                ducks.add(new Duck(startX, Duck.duckLines[Duck.nextDuckLines][1], speed, Duck.duckLines[Duck.nextDuckLines][3], duckImg));
+
+                // 다음 라인으로 이동
+                Duck.nextDuckLines++;
+                if (Duck.nextDuckLines >= Duck.duckLines.length)
+                    Duck.nextDuckLines = 0;
+
+                Duck.lastDuckTime = System.nanoTime();
             }
+        }
+        else {
+            if (ducks.size()<5&&System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks) {
+                int direction = random.nextInt(2);  // 0이면 오른쪽 -> 왼쪽, 1이면 왼쪽 -> 오른쪽
+                int startX, speed;
+                if (direction == 0) {  // 오른쪽에서 왼쪽으로 이동
+                    startX = Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200); // 기존과 동일하게 오른쪽에서 출발
+                    speed = Duck.duckLines[Duck.nextDuckLines][2];  // 음수 속도 (왼쪽으로 이동)
+                } else {  // 왼쪽에서 오른쪽으로 이동
+                    startX = 0 - random.nextInt(200);  // 왼쪽에서 출발
+                    speed = -Duck.duckLines[Duck.nextDuckLines][2];  // 양수 속도 (오른쪽으로 이동)
+                }
 
-            ducks.add(new Duck(startX, Duck.duckLines[Duck.nextDuckLines][1], speed, Duck.duckLines[Duck.nextDuckLines][3], duckImg));
+                ducks.add(new Duck(startX, Duck.duckLines[Duck.nextDuckLines][1], speed, Duck.duckLines[Duck.nextDuckLines][3], duckImg));
 
-            if (random.nextInt(10) < 5) {  // 80% 확률로 일반 오리 생성
-                ducks.add(new Duck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200),
-                        Duck.duckLines[Duck.nextDuckLines][1],
-                        Duck.duckLines[Duck.nextDuckLines][2],
-                        Duck.duckLines[Duck.nextDuckLines][3],
-                        duckImg));
-            } else if (random.nextInt(10) < 2) {  // 20% 확률로 BadDuck 생성
-                ducks.add(new BadDuck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200),
-                        Duck.duckLines[Duck.nextDuckLines][1],
-                        Duck.duckLines[Duck.nextDuckLines][2],
-                        Duck.duckLines[Duck.nextDuckLines][3],
-                        badDuckImg));
-            } else {
-                // 20% 확률로 힘센 오리 생성
-                ducks.add(new StrongDuck(startX, Duck.duckLines[Duck.nextDuckLines][1], speed, Duck.duckLines[Duck.nextDuckLines][3], duckImg));
+                if (random.nextInt(10) < 8) {  // 80% 확률로 일반 오리 생성
+                    ducks.add(new Duck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200),
+                            Duck.duckLines[Duck.nextDuckLines][1],
+                            Duck.duckLines[Duck.nextDuckLines][2],
+                            Duck.duckLines[Duck.nextDuckLines][3],
+                            duckImg));
+                } else {  // 20% 확률로 BadDuck 생성
+                    ducks.add(new BadDuck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200),
+                            Duck.duckLines[Duck.nextDuckLines][1],
+                            Duck.duckLines[Duck.nextDuckLines][2],
+                            Duck.duckLines[Duck.nextDuckLines][3],
+                            badDuckImg));
+                }
+
+                Duck.nextDuckLines++;
+                if (Duck.nextDuckLines >= Duck.duckLines.length)
+                    Duck.nextDuckLines = 0;
+
+                Duck.lastDuckTime = System.nanoTime();
             }
-
-            Duck.nextDuckLines++;
-            if (Duck.nextDuckLines >= Duck.duckLines.length)
-                Duck.nextDuckLines = 0;
-
-            Duck.lastDuckTime = System.nanoTime();
+        }
+        // 피버타임 종료 처리
+        if (isFeverTimeActive && System.nanoTime() - feverStartTime >= feverDuration * 1000000) {
+            isFeverTimeActive = false; // 피버타임 종료
+            timeBetweenShots = Framework.secInNanosec / 3; // 사격 딜레이 원상 복구
+            killCount = 0; // 연속 사격 수 초기화
         }
         // Creates a new duck, if it's the time, and add it to the array list.
         if(System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks)
@@ -314,15 +354,6 @@ public class Game {
                     {
                         killedDucks++;
                         killCount++;
-                        // 힘센 오리의 경우 추가 점수 처리
-                        if (currentDuck instanceof StrongDuck) {
-                            StrongDuck strongDuck = (StrongDuck) currentDuck;
-                            if (!strongDuck.hasDodged()) {
-                                score += 20; // 힘센 오리 잡았을 때 추가 점수
-                            } else {
-                                score += 10; // 힘센 오리 회피 후 잡았을 때 일반 점수
-                            }
-                        }
                         // 점수 계산
                         int scoreMultiplier = isDoubleScoreActive ? 2 : 1; // 점수 배수 결정
                         score += currentDuck.score * scoreMultiplier;
@@ -372,7 +403,14 @@ public class Game {
      */
     public void Draw(Graphics2D g2d, Point mousePosition)
     {
+
         g2d.drawImage(backgroundImg, 0, 0, Framework.frameWidth, Framework.frameHeight, null);
+
+        // 피버타임이 활성화된 동안에는 화면 전체를 반투명한 색으로 덮는 효과를 추가
+        if (isFeverTimeActive) {
+            g2d.setColor(new Color(255, 0, 0, 100));  // 빨간색 반투명 레이어
+            g2d.fillRect(0, 0, Framework.frameWidth, Framework.frameHeight);
+        }
 
         // Here we draw all the ducks.
         for(int i = 0; i < ducks.size(); i++)
