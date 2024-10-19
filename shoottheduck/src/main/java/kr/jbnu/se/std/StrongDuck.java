@@ -2,13 +2,14 @@ package kr.jbnu.se.std;
 
 import java.awt.image.BufferedImage;
 
-public class StrongDuck extends  Duck {
+public class StrongDuck extends Duck {
     private boolean dodged; // 사격 회피 여부
 
     public StrongDuck(int x, int y, int speed, int points, BufferedImage image) {
         super(x, y, speed, points, image);
         this.dodged = false; // 회피 상태 초기화
     }
+
     @Override
     public void Update() {
         super.Update(); // 기본 오리 업데이트 호출
