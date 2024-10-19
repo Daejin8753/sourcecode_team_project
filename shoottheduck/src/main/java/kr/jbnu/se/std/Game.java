@@ -6,6 +6,7 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
@@ -16,88 +17,89 @@ import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 
 /**
- * 실제 게임 클래스.
+ * Actual game.
  *
  * @author www.gametutorial.net
  */
 
 public class Game {
 
+
     private BufferedImage badDuckImg;
     /**
-     * 랜덤 숫자를 생성하기 위해 사용됨.
+     * We use this to generate a random number.
      */
     private Random random;
 
     /**
-     * 화면에 통계를 표시하기 위해 사용할 폰트.
+     * Font that we will use to write statistic to the screen.
      */
     private Font font;
 
     /**
-     * 오리들의 배열 리스트.
+     * Array list of the ducks.
      */
     private ArrayList<Duck> ducks;
 
     /**
-     * 화면을 떠나는 오리의 수.
+     * How many ducks leave the screen alive?
      */
     private int runawayDucks;
 
     /**
-     * 플레이어가 잡은 오리의 수.
+     * How many ducks the player killed?
      */
     private int killedDucks;
 
     /**
-     * 플레이어가 오리를 잡을 때 얻는 점수.
+     * For each killed duck, the player gets points.
      */
     private int score;
 
     /**
-     * 플레이어가 쏜 횟수.
+     * How many times a player is shot?
      */
     private int shoots;
 
     /**
-     * 마지막으로 총을 쏜 시간.
+     * Last time of the shoot.
      */
     private long lastTimeShoot;
     /**
-     * 총을 쏘기 위해 경과해야 하는 시간.
+     * The time which must elapse between shots.
      */
     private long timeBetweenShots;
 
     /**
-     * kr.jbnu.se.std.Game 배경 이미지.
+     * kr.jbnu.se.std.Game background image.
      */
     private BufferedImage backgroundImg;
 
     /**
-     * 하단의 잔디 이미지.
+     * Bottom grass.
      */
     private BufferedImage grassImg;
 
     /**
-     * kr.jbnu.se.std.Duck 이미지.
+     * kr.jbnu.se.std.Duck image.
      */
     private BufferedImage duckImg;
 
     /**
-     * 샷건 조준경 이미지.
+     * Shotgun sight image.
      */
     private BufferedImage sightImg;
 
     /**
-     * 조준경 이미지의 중간 너비.
+     * Middle width of the sight image.
      */
     private int sightImgMiddleWidth;
     /**
-     * 조준경 이미지의 중간 높이.
+     * Middle height of the sight image.
      */
     private int sightImgMiddleHeight;
 
-    private int difficultyLevel; // 난이도 변수
+    private int difficultyLevel;// 난이도 변수
 
     private final long[] duckSpawnTimes = {1000000000, 800000000, 600000000, 400000000, 200000000}; // 각 난이도별 오리 출현 시간 (나노초)
 
@@ -111,6 +113,13 @@ public class Game {
     private long feverStartTime; // 피버타임 시작 시간
     private long feverDuration = 5000; // 피버타임 지속 시간 (밀리초 단위)
 
+    private boolean isZoomed = false;
+
+    private ArrayList<Item> items = new ArrayList<>(); // 화면에 표시된 아이템 목록
+    private BufferedImage itemImg; // 아이템 이미지
+
+
+
     public Game()
     {
         random = new Random();
@@ -122,9 +131,9 @@ public class Game {
         Thread threadForInitGame = new Thread() {
             @Override
             public void run(){
-                // 게임을 위한 변수와 객체 설정.
+                // Sets variables and objects for the game.
                 Initialize();
-                // 게임 파일 로드 (이미지, 소리 등)
+                // Load game files (images, sounds, ...)
                 LoadContent();
 
                 Framework.gameState = Framework.GameState.PLAYING;
@@ -133,8 +142,9 @@ public class Game {
         threadForInitGame.start();
     }
 
+
     /**
-     * 게임을 위한 변수와 객체 설정.
+     * Set variables and objects for the game.
      */
     private void Initialize()
     {
@@ -153,14 +163,15 @@ public class Game {
         lastTimeShoot = 0;
         timeBetweenShots = Framework.secInNanosec / 3;
         difficultyLevel = 0;
+
+    }
+    private void AdjustDuckSpawnTime() {
+        Duck.timeBetweenDucks = duckSpawnTimes[difficultyLevel]*2; // 현재 난이도에 따른 오리 출현 시간 설정
     }
 
-    private void AdjustDuckSpawnTime() {
-        Duck.timeBetweenDucks = duckSpawnTimes[difficultyLevel] * 2; // 현재 난이도에 따른 오리 출현 시간 설정
-    }
 
     /**
-     * 게임 파일 로드 - 이미지, 소리 등.
+     * Load game files - images, sounds, ...
      */
     private void LoadContent()
     {
@@ -182,6 +193,9 @@ public class Game {
             URL badDuckImgUrl = this.getClass().getResource("/images/bad_duck.png");
             badDuckImg = ImageIO.read(badDuckImgUrl);
 
+            URL itemImgUrl = this.getClass().getResource("/images/item.png"); // 아이템 이미지 경로
+            itemImg = ImageIO.read(itemImgUrl);
+
             sightImg = ImageIO.read(sightImgUrl);
             sightImgMiddleWidth = sightImg.getWidth() / 2;
             sightImgMiddleHeight = sightImg.getHeight() / 2;
@@ -192,15 +206,16 @@ public class Game {
         }
     }
 
+
     /**
-     * 게임을 재시작함 - 몇 가지 변수를 재설정함.
+     * Restart game - reset some variables.
      */
     public void RestartGame()
     {
-        // 모든 오리를 리스트에서 제거함.
+        // Removes all of the ducks from this list.
         ducks.clear();
 
-        // 마지막 오리 생성 시간을 0으로 설정함.
+        // We set last duckt time to zero.
         Duck.lastDuckTime = 0;
 
         runawayDucks = 0;
@@ -210,7 +225,6 @@ public class Game {
 
         lastTimeShoot = 0;
     }
-
     private int getMaxDucksByDifficulty() {
         switch(difficultyLevel) {
             case 0: return 3;  // 쉬운 난이도에서 최대 3마리
@@ -221,20 +235,27 @@ public class Game {
         }
     }
 
+
     /**
-     * 게임 로직 업데이트.
+     * Update game logic.
      *
-     * @param gameTime 게임의 현재 시간.
-     * @param mousePosition 현재 마우스 위치.
+     * @param gameTime gameTime of the game.
+     * @param mousePosition current mouse position.
      */
     public void UpdateGame(long gameTime, Point mousePosition)
     {
         AdjustDuckSpawnTime(); // 난이도에 따른 오리 출현 간격 조정
 
-        if (killCount >= 5 && runawayDucks <= 0 && !isFeverTimeActive) {
+        if (killCount >= 5 && runawayDucks<=0 && !isFeverTimeActive) {
             isFeverTimeActive = true;
             feverStartTime = System.nanoTime();
             timeBetweenShots = 0; // 사격 딜레이 없애기
+        }
+
+        if (Canvas.mouseButtonState(MouseEvent.BUTTON3)) {
+            isZoomed = true;
+        } else {
+            isZoomed = false;
         }
 
         // 피버타임 동안 오리 출현 빈도 조정
@@ -260,7 +281,7 @@ public class Game {
             }
         }
         else {
-            if (ducks.size() < 5 && System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks) {
+            if (ducks.size()<5&&System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks) {
                 int direction = random.nextInt(2);  // 0이면 오른쪽 -> 왼쪽, 1이면 왼쪽 -> 오른쪽
                 int startX, speed;
                 if (direction == 0) {  // 오른쪽에서 왼쪽으로 이동
@@ -273,18 +294,28 @@ public class Game {
 
                 ducks.add(new Duck(startX, Duck.duckLines[Duck.nextDuckLines][1], speed, Duck.duckLines[Duck.nextDuckLines][3], duckImg));
 
-                if (random.nextInt(10) < 8) {  // 80% 확률로 일반 오리 생성
+                if (random.nextInt(10) < 6) {  // 60% 확률로 일반 오리 생성
                     ducks.add(new Duck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200),
                             Duck.duckLines[Duck.nextDuckLines][1],
                             Duck.duckLines[Duck.nextDuckLines][2],
                             Duck.duckLines[Duck.nextDuckLines][3],
                             duckImg));
-                } else {  // 20% 확률로 BadDuck 생성
+                } else if (random.nextInt(10) < 2){  // 20% 확률로 BadDuck 생성
                     ducks.add(new BadDuck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200),
                             Duck.duckLines[Duck.nextDuckLines][1],
                             Duck.duckLines[Duck.nextDuckLines][2],
                             Duck.duckLines[Duck.nextDuckLines][3],
                             badDuckImg));
+                }
+                else {
+                    if (random.nextInt(10) < 2) { // 20% 확률로 FastDuck 출현
+                        ducks.add(new FastDuck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200),
+                                Duck.duckLines[Duck.nextDuckLines][1],
+                                Duck.duckLines[Duck.nextDuckLines][2],
+                                Duck.duckLines[Duck.nextDuckLines][3],
+                                duckImg));
+                    }
+
                 }
 
                 Duck.nextDuckLines++;
@@ -300,13 +331,13 @@ public class Game {
             timeBetweenShots = Framework.secInNanosec / 3; // 사격 딜레이 원상 복구
             killCount = 0; // 연속 사격 수 초기화
         }
-        // 새로운 오리를 생성하고 배열 리스트에 추가함.
+        // Creates a new duck, if it's the time, and add it to the array list.
         if(System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks)
         {
-            // 새로운 오리를 생성하고 배열 리스트에 추가함.
+            // Here we create new duck and add it to the array list.
             ducks.add(new Duck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200), Duck.duckLines[Duck.nextDuckLines][1], Duck.duckLines[Duck.nextDuckLines][2], Duck.duckLines[Duck.nextDuckLines][3], duckImg));
 
-            // 다음 라인으로 이동하여 다음 오리가 생성되도록 함.
+            // Here we increase nextDuckLines so that next duck will be created in next line.
             Duck.nextDuckLines++;
             if(Duck.nextDuckLines >= Duck.duckLines.length)
                 Duck.nextDuckLines = 0;
@@ -314,13 +345,13 @@ public class Game {
             Duck.lastDuckTime = System.nanoTime();
         }
 
-        // 모든 오리들을 업데이트함.
+        // Update all of the ducks.
         for(int i = 0; i < ducks.size(); i++)
         {
-            // 오리를 이동시킴.
+            // Move the duck.
             ducks.get(i).Update();
 
-            // 오리가 화면을 벗어나면 제거함.
+            // Checks if the duck leaves the screen and remove it if it does.
             if(ducks.get(i).x < 0 - duckImg.getWidth())
             {
                 ducks.remove(i);
@@ -328,20 +359,20 @@ public class Game {
             }
         }
 
-        // 플레이어가 총을 쏘았는지 확인함.
+        // Does player shoots?
         if(Canvas.mouseButtonState(MouseEvent.BUTTON1))
         {
-            // 다시 총을 쏠 수 있는지 확인함.
+            // Checks if it can shoot again.
             if(System.nanoTime() - lastTimeShoot >= timeBetweenShots)
             {
                 boolean hit = false;
                 shoots++;
 
-                // 모든 오리들을 순회하며 총에 맞았는지 확인함.
+                // We go over all the ducks and we look if any of them was shoot.
                 for(int i = 0; i < ducks.size(); i++)
                 {
                     Duck currentDuck = ducks.get(i);
-                    // 플레이어가 쏜 위치가 오리의 머리나 몸체에 있는지 확인함.
+                    // We check, if the mouse was over ducks head or body, when player has shot.
                     if(new Rectangle(ducks.get(i).x + 18, ducks.get(i).y     , 27, 30).contains(mousePosition) ||
                             new Rectangle(ducks.get(i).x + 30, ducks.get(i).y + 30, 88, 25).contains(mousePosition))
                     {
@@ -363,11 +394,11 @@ public class Game {
                         score += currentDuck.score;
                         score += ducks.get(i).score;
 
-                        // 오리를 배열 리스트에서 제거함.
+                        // Remove the duck from the array list.
                         ducks.remove(i);
                         hit = true;
 
-                        // 플레이어가 쏜 오리를 찾았으므로 for 루프를 나감.
+                        // We found the duck that player shoot so we can leave the for loop.
                         break;
                     }
                 }
@@ -382,21 +413,85 @@ public class Game {
         if (score >= 50 && difficultyLevel < 4) {
             difficultyLevel++; // 점수가 50 이상일 때 난이도 증가
         }
+        // 아이템 업데이트
+        for (int i = 0; i < items.size(); i++) {
+            Item item = items.get(i);
 
-        // 200마리의 오리가 도망가면 게임이 종료됨.
+            // 플레이어가 아이템을 획득했는지 체크
+            if (item.checkCollision(mousePosition) && !item.isCollected) {
+                item.collect(); // 아이템 수집
+                ActivateItemEffect(); // 아이템 효과 적용
+            }
+        }
+
+        // 아이템 업데이트
+        for (int i = 0; i < items.size(); i++) {
+            Item item = items.get(i);
+
+            // 수집된 아이템 또는 일정 시간이 지난 아이템 삭제
+            if (item.isCollected || gameTime - item.spawnTime >= 5000) { // 5초 후 삭제
+                items.remove(i);
+                i--; // 인덱스 조정
+            }
+        }
+        // When 200 ducks runaway, the game ends.
         if(runawayDucks >= 200)
             Framework.gameState = Framework.GameState.GAMEOVER;
     }
+    private void ActivateItemEffect() {
+        // 30% 확률로 피버타임 활성화3
+        if (random.nextInt(100) < 30) {
+            isFeverTimeActive = true;
+            feverStartTime = System.nanoTime();
+        }
+    }
+    private void CheckFastDuckHit(Point mousePosition) {
+        for (int i = 0; i < ducks.size(); i++) {
+            Duck currentDuck = ducks.get(i);
 
+            if (currentDuck instanceof FastDuck) {
+                // FastDuck 맞추기 체크
+                if (new Rectangle(currentDuck.x + 18, currentDuck.y, 27, 30).contains(mousePosition)) {
+                    // 30% 확률로 피버타임 돌입
+                    if (random.nextInt(100) < 30) {
+                        ActivateFeverTime();
+                    }
+
+                    // 점수 추가 및 아이템 드롭
+                    score += currentDuck.score * 2;
+                    DropItem(currentDuck.x, currentDuck.y); // 아이템 드롭
+                    ducks.remove(i); // 오리 제거
+                    break;
+                }
+            }
+        }
+    }
+    // 아이템 드롭 기능 추가
+    private void DropItem(int x, int y) {
+        // 30% 확률로 아이템 드롭
+        if (random.nextInt(100) < 30) {
+            items.add(new Item(x, y, itemImg)); // 아이템 추가
+        }
+    }
+
+    // 피버타임 활성화
+    private void ActivateFeverTime() {
+        isFeverTimeActive = true;
+        feverStartTime = System.nanoTime();
+        timeBetweenShots = 0; // 피버타임 동안 사격 딜레이 없음
+    }
     /**
-     * 게임을 화면에 그림.
+     * Draw the game to the screen.
      *
      * @param g2d Graphics2D
-     * @param mousePosition 현재 마우스 위치.
+     * @param mousePosition current mouse position.
      */
     public void Draw(Graphics2D g2d, Point mousePosition)
     {
 
+        if (isZoomed) {
+            g2d.scale(1.2, 1.2); // 화면을 1.2배 확대
+        }
         g2d.drawImage(backgroundImg, 0, 0, Framework.frameWidth, Framework.frameHeight, null);
 
         // 피버타임이 활성화된 동안에는 화면 전체를 반투명한 색으로 덮는 효과를 추가
@@ -405,12 +500,15 @@ public class Game {
             g2d.fillRect(0, 0, Framework.frameWidth, Framework.frameHeight);
         }
 
-        // 모든 오리들을 그림.
+        // Here we draw all the ducks.
         for(int i = 0; i < ducks.size(); i++)
         {
             ducks.get(i).Draw(g2d);
         }
-
+        // 아이템 그리기
+        for (int i = 0; i < items.size(); i++) {
+            items.get(i).Draw(g2d);
+        }
         g2d.drawImage(grassImg, 0, Framework.frameHeight - grassImg.getHeight(), Framework.frameWidth, grassImg.getHeight(), null);
 
         g2d.drawImage(sightImg, mousePosition.x - sightImgMiddleWidth, mousePosition.y - sightImgMiddleHeight, null);
@@ -422,19 +520,22 @@ public class Game {
         g2d.drawString("KILLS: " + killedDucks, 160, 21);
         g2d.drawString("MISS: " + miss, 299, 21);
         g2d.drawString("SCORE: " + score, 440, 21);
+
+        g2d.setTransform(new AffineTransform());
     }
 
+
     /**
-     * 게임 오버 화면을 그림.
+     * Draw the game over screen.
      *
      * @param g2d Graphics2D
-     * @param mousePosition 현재 마우스 위치.
+     * @param mousePosition Current mouse position.
      */
     public void DrawGameOver(Graphics2D g2d, Point mousePosition)
     {
         Draw(g2d, mousePosition);
 
-        // 첫 번째 텍스트는 그림자를 위해 사용됨.
+        // The first text is used for shade.
         g2d.setColor(Color.black);
         g2d.drawString("kr.jbnu.se.std.Game Over", Framework.frameWidth / 2 - 39, (int)(Framework.frameHeight * 0.65) + 1);
         g2d.drawString("Press space or enter to restart.", Framework.frameWidth / 2 - 149, (int)(Framework.frameHeight * 0.70) + 1);

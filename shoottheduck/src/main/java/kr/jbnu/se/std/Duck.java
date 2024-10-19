@@ -60,7 +60,7 @@ public class Duck {
     /**
      * kr.jbnu.se.std.Duck 이미지.
      */
-    private BufferedImage duckImg;
+    protected BufferedImage duckImg;
 
 
     /**
