@@ -14,7 +14,7 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 
 /**
- * kr.jbnu.se.std.Framework that controls the game (kr.jbnu.se.std.Game.java) that created it, update it and draw it on the screen.
+ * kr.jbnu.se.std.Framework는 게임(kr.jbnu.se.std.Game.java)을 제어하고, 업데이트하며 화면에 그리기를 담당함.
  *
  * @author www.gametutorial.net
  */
@@ -23,34 +23,34 @@ import javax.swing.*;
 public class Framework extends Canvas{
 
     /**
-     * Width of the frame.
+     * 프레임의 너비.
      */
 
     public static int frameWidth;
     /**
-     * Height of the frame.
+     * 프레임의 높이.
      */
     public static int frameHeight;
 
     /**
-     * Time of one second in nanoseconds.
-     * 1 second = 1 000 000 000 nanoseconds
+     * 1초를 나노초로 나타낸 시간.
+     * 1초 = 1,000,000,000 나노초
      */
     public static final long secInNanosec = 1000000000L;
 
     /**
-     * Time of one millisecond in nanoseconds.
-     * 1 millisecond = 1 000 000 nanoseconds
+     * 1밀리초를 나노초로 나타낸 시간.
+     * 1밀리초 = 1,000,000 나노초
      */
     public static final long milisecInNanosec = 1000000L;
 
     /**
-     * FPS - Frames per second
-     * How many times per second the game should update?
+     * FPS - 초당 프레임 수
+     * 게임이 매 초 몇 번 업데이트되어야 하는지.
      */
     private final int GAME_FPS = 60;
     /**
-     * Pause between updates. It is in nanoseconds.
+     * 업데이트 간의 대기 시간. 나노초 단위로 나타냄.
      */
     private final long GAME_UPDATE_PERIOD = secInNanosec / GAME_FPS;
 
@@ -59,27 +59,26 @@ public class Framework extends Canvas{
 
 
     /**
-     * Possible states of the game
+     * 게임의 가능한 상태들
      */
-    public static enum GameState{STARTING, VISUALIZING, GAME_CONTENT_LOADING, MAIN_MENU, OPTIONS, PLAYING, GAMEOVER, DESTROYED,PAUSED}
+    public static enum GameState{STARTING, VISUALIZING, GAME_CONTENT_LOADING, MAIN_MENU, OPTIONS, PLAYING, GAMEOVER, DESTROYED, PAUSED}
     /**
-     * Current state of the game
+     * 현재 게임 상태
      */
     public static GameState gameState;
 
     /**
-     * Elapsed game time in nanoseconds.
+     * 게임에서 경과된 시간 (나노초 단위).
      */
     private long gameTime;
-    // It is used for calculating elapsed time.
+    // 경과 시간을 계산하기 위해 사용됨.
     private long lastTime;
 
-    // The actual game
+    // 실제 게임 객체
     private Game game;
 
-
     /**
-     * Image for menu.
+     * 메뉴 이미지.
      */
     private BufferedImage shootTheDuckMenuImg;
 
@@ -90,7 +89,7 @@ public class Framework extends Canvas{
 
         gameState = GameState.VISUALIZING;
 
-        //We start game in new thread.
+        // 새로운 스레드에서 게임을 시작함.
         Thread gameThread = new Thread() {
             @Override
             public void run(){
@@ -100,10 +99,9 @@ public class Framework extends Canvas{
         gameThread.start();
     }
 
-
     /**
-     * Set variables and objects.
-     * This method is intended to set the variables and objects for this class, variables and objects for the actual game can be set in kr.jbnu.se.std.Game.java.
+     * 변수와 객체를 설정함.
+     * 이 메서드는 이 클래스의 변수와 객체를 설정하는 데 사용되며, 실제 게임의 변수와 객체는 kr.jbnu.se.std.Game.java에서 설정될 수 있음.
      */
     private void Initialize()
     {
@@ -111,8 +109,8 @@ public class Framework extends Canvas{
     }
 
     /**
-     * Load files - images, sounds, ...
-     * This method is intended to load files for this class, files for the actual game can be loaded in kr.jbnu.se.std.Game.java.
+     * 파일을 로드함 - 이미지, 소리 등.
+     * 이 메서드는 이 클래스의 파일을 로드하는 데 사용되며, 실제 게임의 파일은 kr.jbnu.se.std.Game.java에서 로드될 수 있음.
      */
     private void LoadContent()
     {
@@ -127,14 +125,14 @@ public class Framework extends Canvas{
     }
 
     /**
-     * In specific intervals of time (GAME_UPDATE_PERIOD) the game/logic is updated and then the game is drawn on the screen.
+     * 특정 시간 간격(GAME_UPDATE_PERIOD)마다 게임 로직을 업데이트하고 게임을 화면에 그림.
      */
     private void GameLoop()
     {
-        // This two variables are used in VISUALIZING state of the game. We used them to wait some time so that we get correct frame/window resolution.
+        // 이 두 변수는 게임의 VISUALIZING 상태에서 사용됨. 프레임/창 해상도를 올바르게 가져오기 위해 시간을 기다리기 위해 사용함.
         long visualizingTime = 0, lastVisualizingTime = System.nanoTime();
 
-        // This variables are used for calculating the time that defines for how long we should put threat to sleep to meet the GAME_FPS.
+        // 이 변수들은 스레드를 대기 상태로 설정하여 GAME_FPS를 맞추기 위해 사용됨.
         long beginTime, timeTaken, timeLeft;
 
         while(true)
@@ -166,25 +164,23 @@ public class Framework extends Canvas{
                     //...
                     break;
                 case STARTING:
-                    // Sets variables and objects.
+                    // 변수와 객체를 설정함.
                     Initialize();
-                    // Load files - images, sounds, ...
+                    // 파일을 로드함 - 이미지, 소리 등.
                     LoadContent();
 
-                    // When all things that are called above finished, we change game status to main menu.
+                    // 위에서 호출된 모든 작업이 완료되면 게임 상태를 메인 메뉴로 변경함.
                     gameState = GameState.MAIN_MENU;
                     break;
                 case VISUALIZING:
-                    // On Ubuntu OS (when I tested on my old computer) this.getWidth() method doesn't return the correct value immediately (eg. for frame that should be 800px width, returns 0 than 790 and at last 798px).
-                    // So we wait one second for the window/frame to be set to its correct size. Just in case we
-                    // also insert 'this.getWidth() > 1' condition in case when the window/frame size wasn't set in time,
-                    // so that we although get approximately size.
+                    // Ubuntu OS에서 (구형 컴퓨터에서 테스트한 경우) this.getWidth() 메서드는 즉시 올바른 값을 반환하지 않음 (예: 프레임이 800px 너비여야 할 때 0을 반환하고 그 후 790, 마지막으로 798px).
+                    // 그래서 우리는 창/프레임이 올바른 크기로 설정되도록 1초를 기다림. 혹시 몰라서 'this.getWidth() > 1' 조건을 추가함.
                     if(this.getWidth() > 1 && visualizingTime > secInNanosec)
                     {
                         frameWidth = this.getWidth();
                         frameHeight = this.getHeight();
 
-                        // When we get size of frame we change status.
+                        // 프레임의 크기를 가져온 후 상태를 변경함.
                         gameState = GameState.STARTING;
                     }
                     else
@@ -195,24 +191,24 @@ public class Framework extends Canvas{
                     break;
             }
 
-            // Repaint the screen.
+            // 화면을 다시 그림.
             repaint();
 
-            // Here we calculate the time that defines for how long we should put threat to sleep to meet the GAME_FPS.
+            // 스레드를 대기 상태로 설정하여 GAME_FPS를 맞추기 위한 시간을 계산함.
             timeTaken = System.nanoTime() - beginTime;
-            timeLeft = (GAME_UPDATE_PERIOD - timeTaken) / milisecInNanosec; // In milliseconds
-            // If the time is less than 10 milliseconds, then we will put thread to sleep for 10 millisecond so that some other thread can do some work.
+            timeLeft = (GAME_UPDATE_PERIOD - timeTaken) / milisecInNanosec; // 밀리초 단위로 계산
+            // 시간이 10밀리초보다 적으면, 다른 스레드가 작업을 할 수 있도록 스레드를 10밀리초 동안 대기 상태로 설정함.
             if (timeLeft < 10)
-                timeLeft = 10; //set a minimum
+                timeLeft = 10; // 최소 대기 시간 설정
             try {
-                //Provides the necessary delay and also yields control so that other thread can do work.
+                // 필요한 지연 시간을 제공하고 다른 스레드가 작업을 할 수 있도록 제어를 양보함.
                 Thread.sleep(timeLeft);
             } catch (InterruptedException ex) { }
         }
     }
 
     /**
-     * Draw the game to the screen. It is called through repaint() method in GameLoop() method.
+     * 게임을 화면에 그림. GameLoop() 메서드에서 repaint() 메서드를 통해 호출됨.
      */
     @Override
     public void Draw(Graphics2D g2d)
@@ -227,33 +223,33 @@ public class Framework extends Canvas{
                 break;
             case MAIN_MENU:
                 g2d.drawImage(shootTheDuckMenuImg, 0, 0, frameWidth, frameHeight, null);
-                g2d.drawString("Use left mouse button to shot the duck.", frameWidth / 2 - 83, (int)(frameHeight * 0.65));
-                g2d.drawString("Click with left mouse button to start the game.", frameWidth / 2 - 100, (int)(frameHeight * 0.67));
-                g2d.drawString("Press ESC any time to exit the game.", frameWidth / 2 - 75, (int)(frameHeight * 0.70));
+                g2d.drawString("왼쪽 마우스 버튼을 사용해 오리를 쏘세요.", frameWidth / 2 - 83, (int)(frameHeight * 0.65));
+                g2d.drawString("게임을 시작하려면 왼쪽 마우스 버튼을 클릭하세요.", frameWidth / 2 - 100, (int)(frameHeight * 0.67));
+                g2d.drawString("게임을 종료하려면 언제든지 ESC를 누르세요.", frameWidth / 2 - 75, (int)(frameHeight * 0.70));
                 g2d.setColor(Color.white);
                 g2d.drawString("WWW.GAMETUTORIAL.NET", 7, frameHeight - 5);
                 break;
             case PAUSED:  // 일시정지 화면 출력
                 g2d.setColor(Color.white);
-                g2d.drawString("Game Paused", frameWidth / 2 - 50, frameHeight / 2 - 20);
-                g2d.drawString("Press 'P' to resume", frameWidth / 2 - 60, frameHeight / 2);
+                g2d.drawString("게임이 일시정지됨", frameWidth / 2 - 50, frameHeight / 2 - 20);
+                g2d.drawString("게임을 다시 시작하려면 'P'를 누르세요", frameWidth / 2 - 60, frameHeight / 2);
                 break;
             case OPTIONS:
                 //...
                 break;
             case GAME_CONTENT_LOADING:
                 g2d.setColor(Color.white);
-                g2d.drawString("GAME is LOADING", frameWidth / 2 - 50, frameHeight / 2);
+                g2d.drawString("게임 로딩 중", frameWidth / 2 - 50, frameHeight / 2);
                 break;
         }
     }
 
     /**
-     * Starts new game.
+     * 새로운 게임을 시작함.
      */
     private void newGame()
     {
-        // We set gameTime to zero and lastTime to current time for later calculations.
+        // 게임 시간을 0으로 설정하고 현재 시간으로 lastTime을 설정하여 이후 계산에 사용함.
         gameTime = 0;
         lastTime = System.nanoTime();
 
@@ -261,25 +257,25 @@ public class Framework extends Canvas{
     }
 
     /**
-     *  Restart game - reset game time and call RestartGame() method of game object so that reset some variables.
+     * 게임을 재시작함 - 게임 시간을 재설정하고 게임 객체의 RestartGame() 메서드를 호출하여 몇 가지 변수를 재설정함.
      */
     private void restartGame()
     {
-        // We set gameTime to zero and lastTime to current time for later calculations.
+        // 게임 시간을 0으로 설정하고 현재 시간으로 lastTime을 설정하여 이후 계산에 사용함.
         gameTime = 0;
         lastTime = System.nanoTime();
 
         game.RestartGame();
 
-        // We change game status so that the game can start.
+        // 게임 상태를 변경하여 게임을 시작할 수 있도록 함.
         gameState = GameState.PLAYING;
     }
 
     /**
-     * Returns the position of the mouse pointer in game frame/window.
-     * If mouse position is null than this method return 0,0 coordinate.
+     * 게임 프레임/창에서 마우스 포인터의 위치를 반환함.
+     * 마우스 위치가 null이면 이 메서드는 0,0 좌표를 반환함.
      *
-     * @return Point of mouse coordinates.
+     * @return 마우스 좌표의 Point 객체.
      */
     private Point mousePosition()
     {
@@ -299,7 +295,7 @@ public class Framework extends Canvas{
     }
 
     /**
-     * This method is called when keyboard key is released.
+     * 키보드 키가 눌렸을 때 호출되는 메서드.
      *
      * @param e KeyEvent
      */
@@ -332,7 +328,7 @@ public class Framework extends Canvas{
     }
 
     /**
-     * This method is called when mouse button is clicked.
+     * 마우스 버튼이 클릭되었을 때 호출되는 메서드.
      *
      * @param e MouseEvent
      */
