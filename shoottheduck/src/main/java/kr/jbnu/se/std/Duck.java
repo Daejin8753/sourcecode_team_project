@@ -20,6 +20,10 @@ public class Duck {
      */
     public static long lastDuckTime = 0;
 
+    public static long duckSpeed = 0;
+
+
+
     /**
      * kr.jbnu.se.std.Duck 라인.
      * 오리의 시작 위치는 어디인가?
@@ -50,7 +54,7 @@ public class Duck {
     /**
      * 오리가 어느 방향으로 얼마나 빨리 이동해야 하는가?
      */
-    private int speed;
+    private double speed;
 
     /**
      * 이 오리가 가치 있는 점수는 얼마인가?
@@ -72,7 +76,7 @@ public class Duck {
      * @param score 이 오리가 가치 있는 점수.
      * @param duckImg 오리 이미지.
      */
-    public Duck(int x, int y, int speed, int score, BufferedImage duckImg)
+    public Duck(int x, int y, double speed, int score, BufferedImage duckImg)
     {
         this.x = x;
         this.y = y;

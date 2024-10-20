@@ -4,7 +4,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 
 public class FastDuck extends Duck {
-    public FastDuck(int x, int y, int speed, int line, BufferedImage duckImg) {
+    public FastDuck(int x, int y, double speed, int line, BufferedImage duckImg) {
         super(x, y, speed * 2, line, duckImg); // 오리의 속도를 2배로 설정
     }
 

@@ -5,7 +5,7 @@ import java.awt.image.BufferedImage;
 public class StrongDuck extends Duck {
     private boolean dodged; // 사격 회피 여부
 
-    public StrongDuck(int x, int y, int speed, int points, BufferedImage image) {
+    public StrongDuck(int x, int y, double speed, int points, BufferedImage image) {
         super(x, y, speed, points, image);
         this.dodged = false; // 회피 상태 초기화
     }

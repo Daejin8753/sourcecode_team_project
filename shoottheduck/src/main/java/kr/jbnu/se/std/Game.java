@@ -235,6 +235,23 @@ public class Game {
         }
     }
 
+    public void setDifficultyLevel() {
+        if (score >= 3000 && difficultyLevel == 0) {
+            difficultyLevel = 1;
+        } else if (score >= 6000 && difficultyLevel == 1) {
+            difficultyLevel = 2;
+        } else if (score >= 9000 && difficultyLevel == 2) {
+            difficultyLevel = 3;
+        } else if (score >= 12000 && difficultyLevel == 3) {
+            difficultyLevel = 4;
+        }
+    }
+
+    // 난이도에 따른 오리의 속도 조정
+    private double adjustSpeedForDifficulty(double baseSpeed) {
+        return baseSpeed * Math.pow(1.3, difficultyLevel);
+    }
+
 
     /**
      * Update game logic.
@@ -245,6 +262,7 @@ public class Game {
     public void UpdateGame(long gameTime, Point mousePosition)
     {
         AdjustDuckSpawnTime(); // 난이도에 따른 오리 출현 간격 조정
+        setDifficultyLevel(); //난이도에 따른 오리 속도 조정
 
         if (killCount >= 5 && runawayDucks<=0 && !isFeverTimeActive) {
             isFeverTimeActive = true;
@@ -262,13 +280,14 @@ public class Game {
         if (isFeverTimeActive) {
             if (System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks / 2) {
                 int direction = random.nextInt(2);
-                int startX, speed;
+                int startX;
+                double speed;
                 if (direction == 0) {
                     startX = Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200);
-                    speed = Duck.duckLines[Duck.nextDuckLines][2];
+                    speed = adjustSpeedForDifficulty(Duck.duckLines[Duck.nextDuckLines][2]);
                 } else {
                     startX = 0 - random.nextInt(200);
-                    speed = -Duck.duckLines[Duck.nextDuckLines][2];
+                    speed = adjustSpeedForDifficulty(-Duck.duckLines[Duck.nextDuckLines][2]);
                 }
                 ducks.add(new Duck(startX, Duck.duckLines[Duck.nextDuckLines][1], speed, Duck.duckLines[Duck.nextDuckLines][3], duckImg));
 
@@ -283,13 +302,14 @@ public class Game {
         else {
             if (ducks.size()<5&&System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks) {
                 int direction = random.nextInt(2);  // 0이면 오른쪽 -> 왼쪽, 1이면 왼쪽 -> 오른쪽
-                int startX, speed;
+                int startX;
+                double speed;
                 if (direction == 0) {  // 오른쪽에서 왼쪽으로 이동
                     startX = Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200); // 기존과 동일하게 오른쪽에서 출발
-                    speed = Duck.duckLines[Duck.nextDuckLines][2];  // 음수 속도 (왼쪽으로 이동)
+                    speed = adjustSpeedForDifficulty(Duck.duckLines[Duck.nextDuckLines][2]);  // 음수 속도 (왼쪽으로 이동)
                 } else {  // 왼쪽에서 오른쪽으로 이동
                     startX = 0 - random.nextInt(200);  // 왼쪽에서 출발
-                    speed = -Duck.duckLines[Duck.nextDuckLines][2];  // 양수 속도 (오른쪽으로 이동)
+                    speed = adjustSpeedForDifficulty(-Duck.duckLines[Duck.nextDuckLines][2]);  // 양수 속도 (오른쪽으로 이동)
                 }
 
                 ducks.add(new Duck(startX, Duck.duckLines[Duck.nextDuckLines][1], speed, Duck.duckLines[Duck.nextDuckLines][3], duckImg));
@@ -297,13 +317,13 @@ public class Game {
                 if (random.nextInt(10) < 6) {  // 60% 확률로 일반 오리 생성
                     ducks.add(new Duck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200),
                             Duck.duckLines[Duck.nextDuckLines][1],
-                            Duck.duckLines[Duck.nextDuckLines][2],
+                            adjustSpeedForDifficulty(Duck.duckLines[Duck.nextDuckLines][2]),
                             Duck.duckLines[Duck.nextDuckLines][3],
                             duckImg));
                 } else if (random.nextInt(10) < 2){  // 20% 확률로 BadDuck 생성
                     ducks.add(new BadDuck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200),
                             Duck.duckLines[Duck.nextDuckLines][1],
-                            Duck.duckLines[Duck.nextDuckLines][2],
+                            adjustSpeedForDifficulty(Duck.duckLines[Duck.nextDuckLines][2]),
                             Duck.duckLines[Duck.nextDuckLines][3],
                             badDuckImg));
                 }
@@ -311,7 +331,7 @@ public class Game {
                     if (random.nextInt(10) < 2) { // 20% 확률로 FastDuck 출현
                         ducks.add(new FastDuck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200),
                                 Duck.duckLines[Duck.nextDuckLines][1],
-                                Duck.duckLines[Duck.nextDuckLines][2],
+                                adjustSpeedForDifficulty(Duck.duckLines[Duck.nextDuckLines][2]),
                                 Duck.duckLines[Duck.nextDuckLines][3],
                                 duckImg));
                     }
@@ -335,7 +355,7 @@ public class Game {
         if(System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks)
         {
             // Here we create new duck and add it to the array list.
-            ducks.add(new Duck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200), Duck.duckLines[Duck.nextDuckLines][1], Duck.duckLines[Duck.nextDuckLines][2], Duck.duckLines[Duck.nextDuckLines][3], duckImg));
+            ducks.add(new Duck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200), Duck.duckLines[Duck.nextDuckLines][1], adjustSpeedForDifficulty(Duck.duckLines[Duck.nextDuckLines][2]), Duck.duckLines[Duck.nextDuckLines][3], duckImg));
 
             // Here we increase nextDuckLines so that next duck will be created in next line.
             Duck.nextDuckLines++;
@@ -410,9 +430,7 @@ public class Game {
                 lastTimeShoot = System.nanoTime();
             }
         }
-        if (score >= 50 && difficultyLevel < 4) {
-            difficultyLevel++; // 점수가 50 이상일 때 난이도 증가
-        }
+
         // 아이템 업데이트
         for (int i = 0; i < items.size(); i++) {
             Item item = items.get(i);
@@ -520,6 +538,7 @@ public class Game {
         g2d.drawString("KILLS: " + killedDucks, 160, 21);
         g2d.drawString("MISS: " + miss, 299, 21);
         g2d.drawString("SCORE: " + score, 440, 21);
+        g2d.drawString("LEVEL: " + (difficultyLevel+1), 600, 21);
 
         g2d.setTransform(new AffineTransform());
     }
