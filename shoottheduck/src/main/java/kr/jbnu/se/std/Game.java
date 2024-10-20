@@ -238,12 +238,16 @@ public class Game {
     public void setDifficultyLevel() {
         if (score >= 3000 && difficultyLevel == 0) {
             difficultyLevel = 1;
+            runawayDucks = 0;
         } else if (score >= 6000 && difficultyLevel == 1) {
             difficultyLevel = 2;
+            runawayDucks = 0;
         } else if (score >= 9000 && difficultyLevel == 2) {
             difficultyLevel = 3;
+            runawayDucks = 0;
         } else if (score >= 12000 && difficultyLevel == 3) {
             difficultyLevel = 4;
+            runawayDucks = 0;
         }
     }
 
