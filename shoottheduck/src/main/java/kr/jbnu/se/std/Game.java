@@ -99,7 +99,8 @@ public class Game {
      */
     private int sightImgMiddleHeight;
 
-    private int difficultyLevel;// 난이도 변수
+    private static int difficultyLevel;// 난이도 변수
+    private static int initialDifficultyLevel;// 설정한 초기 난이도 저장하기 위한 변수
 
     private final long[] duckSpawnTimes = {1000000000, 800000000, 600000000, 400000000, 200000000}; // 각 난이도별 오리 출현 시간 (나노초)
 
@@ -142,6 +143,39 @@ public class Game {
         threadForInitGame.start();
     }
 
+    protected static void increaseDifficulty() {
+        if (difficultyLevel < 5) {
+            difficultyLevel++;
+        }
+    }
+
+    protected static void decreaseDifficulty() {
+        if (difficultyLevel > 1) {
+            difficultyLevel--;
+        }
+    }
+
+    protected static int getDifficultyLevel(){
+        if (difficultyLevel == 0) { // 초기 값이 설정되지 않은 경우
+            difficultyLevel = 1; // 초기 난이도를 1로 설정
+        }
+        return difficultyLevel;
+    }
+
+    // 초기 난이도를 설정하는 메서드
+    public static int getInitialDifficultyLevel() {
+        initialDifficultyLevel = difficultyLevel; // 초기 난이도를 설정한 값을 저장
+        return initialDifficultyLevel;// 처음 설정한 난이도를 현재 난이도로 적용
+    }
+
+    public static void resetLevel() {
+        initialDifficultyLevel = 1;
+        difficultyLevel = initialDifficultyLevel;
+    }
+
+    public static void resetToInitialDifficulty() {
+        difficultyLevel = getInitialDifficultyLevel();
+    }
 
     /**
      * Set variables and objects for the game.
@@ -162,11 +196,12 @@ public class Game {
         isDoubleScoreActive = false; // 점수 2배 비활성화
         lastTimeShoot = 0;
         timeBetweenShots = Framework.secInNanosec / 3;
-        difficultyLevel = 0;
+        difficultyLevel = getDifficultyLevel();
+        initialDifficultyLevel = difficultyLevel;
 
     }
     private void AdjustDuckSpawnTime() {
-        Duck.timeBetweenDucks = duckSpawnTimes[difficultyLevel]*2; // 현재 난이도에 따른 오리 출현 시간 설정
+        Duck.timeBetweenDucks = duckSpawnTimes[difficultyLevel-1]*2; // 현재 난이도에 따른 오리 출현 시간 설정
     }
 
 
@@ -222,7 +257,7 @@ public class Game {
         killedDucks = 0;
         score = 0;
         shoots = 0;
-
+        difficultyLevel = initialDifficultyLevel;
         lastTimeShoot = 0;
     }
     private int getMaxDucksByDifficulty() {
@@ -235,25 +270,29 @@ public class Game {
         }
     }
 
-    public void setDifficultyLevel() {
-        if (score >= 3000 && difficultyLevel == 0) {
-            difficultyLevel = 1;
-            runawayDucks = 0;
-        } else if (score >= 6000 && difficultyLevel == 1) {
+    private void setDifficultyLevel() {
+        if (score >= 300 - adjustScore(initialDifficultyLevel) && difficultyLevel == 1) {
             difficultyLevel = 2;
             runawayDucks = 0;
-        } else if (score >= 9000 && difficultyLevel == 2) {
+        } else if (score >= 600 - adjustScore(initialDifficultyLevel) && difficultyLevel == 2) {
             difficultyLevel = 3;
             runawayDucks = 0;
-        } else if (score >= 12000 && difficultyLevel == 3) {
+        } else if (score >= 900 - adjustScore(initialDifficultyLevel) && difficultyLevel == 3) {
             difficultyLevel = 4;
+            runawayDucks = 0;
+        } else if (score >= 1200 - adjustScore(initialDifficultyLevel) && difficultyLevel == 4) {
+            difficultyLevel = 5;
             runawayDucks = 0;
         }
     }
 
+    private int adjustScore(int x){
+        return 300*(x - 1);
+    }
+
     // 난이도에 따른 오리의 속도 조정
     private double adjustSpeedForDifficulty(double baseSpeed) {
-        return baseSpeed * Math.pow(1.3, difficultyLevel);
+        return baseSpeed * Math.pow(1.2, difficultyLevel-1);
     }
 
 
@@ -542,7 +581,7 @@ public class Game {
         g2d.drawString("KILLS: " + killedDucks, 160, 21);
         g2d.drawString("MISS: " + miss, 299, 21);
         g2d.drawString("SCORE: " + score, 440, 21);
-        g2d.drawString("LEVEL: " + (difficultyLevel+1), 600, 21);
+        g2d.drawString("LEVEL: " + (difficultyLevel), 600, 21);
 
         g2d.setTransform(new AffineTransform());
     }

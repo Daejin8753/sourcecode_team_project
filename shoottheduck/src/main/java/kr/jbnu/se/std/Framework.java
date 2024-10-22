@@ -11,6 +11,7 @@ import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
+import java.awt.Font;
 import javax.swing.*;
 
 /**
@@ -54,6 +55,8 @@ public class Framework extends Canvas{
      */
     private final long GAME_UPDATE_PERIOD = secInNanosec / GAME_FPS;
 
+    private BufferedImage LevelbackgroundImg;
+
     public static void changePanel(Game game) {
     }
 
@@ -61,7 +64,7 @@ public class Framework extends Canvas{
     /**
      * 게임의 가능한 상태들
      */
-    public static enum GameState{STARTING, VISUALIZING, GAME_CONTENT_LOADING, MAIN_MENU, OPTIONS, PLAYING, GAMEOVER, DESTROYED, PAUSED}
+    public static enum GameState{STARTING, VISUALIZING, GAME_CONTENT_LOADING, MAIN_MENU, OPTIONS, PLAYING, GAMEOVER, DESTROYED, PAUSED, LEVEL_SETTINGS}
     /**
      * 현재 게임 상태
      */
@@ -118,6 +121,9 @@ public class Framework extends Canvas{
         {
             URL shootTheDuckMenuImgUrl = this.getClass().getResource("/images/menu.jpg");
             shootTheDuckMenuImg = ImageIO.read(shootTheDuckMenuImgUrl);
+
+            URL levelSettingBgImgUrl = this.getClass().getResource("/images/background.jpg");
+            LevelbackgroundImg = ImageIO.read(levelSettingBgImgUrl);
         }
         catch (IOException ex) {
             Logger.getLogger(Framework.class.getName()).log(Level.SEVERE, null, ex);
@@ -155,6 +161,9 @@ public class Framework extends Canvas{
                     //...
                     break;
                 case MAIN_MENU:
+                    //...
+                    break;
+                case LEVEL_SETTINGS:
                     //...
                     break;
                 case OPTIONS:
@@ -241,6 +250,22 @@ public class Framework extends Canvas{
                 g2d.setColor(Color.white);
                 g2d.drawString("게임 로딩 중", frameWidth / 2 - 50, frameHeight / 2);
                 break;
+            case LEVEL_SETTINGS:
+                g2d.drawImage(LevelbackgroundImg, 0, 0, frameWidth, frameHeight, null);
+                g2d.setColor(Color.white);
+                g2d.drawString("WWW.GAMETUTORIAL.NET", 7, frameHeight - 5);
+                g2d.setColor(Color.black);
+                g2d.setFont(new Font("Malgun Gothic", Font.BOLD, 13));
+                g2d.drawString("ESC 또는 L키로 메인 메뉴로 돌아갈 수 있습니다", 10, 20);
+                g2d.setFont(new Font("Malgun Gothic", Font.BOLD, 18));
+                g2d.drawString("방향키 ↑ ↓로 난이도를 선택하세요.", 100, 150);
+                g2d.drawString("게임을 시작하려면 왼쪽 마우스 버튼을 클릭하세요.", 100, 200);
+                g2d.setFont(new Font("Arial", Font.BOLD, 24));
+                int currentLevel = Game.getDifficultyLevel();
+                g2d.drawString("LEVEL    :    " + currentLevel, 300, 410); //현재 난이도 표시
+                g2d.drawString("▲", 435, 370);
+                g2d.drawString("▼", 435, 450);
+                break;
         }
     }
 
@@ -323,6 +348,22 @@ public class Framework extends Canvas{
             case MAIN_MENU:
                 if(e.getKeyCode() == KeyEvent.VK_ESCAPE)
                     System.exit(0);
+                else if(e.getKeyCode() == KeyEvent.VK_L)  // 'L' 키로 LEVEL_SCREEN으로 전환
+                    gameState = GameState.LEVEL_SETTINGS;
+                break;
+            case LEVEL_SETTINGS:
+                if(e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                    gameState = GameState.MAIN_MENU;
+                    Game.resetLevel(); //메인화면가면 난이도 1로 설정
+                }
+                else if(e.getKeyCode() == KeyEvent.VK_L){
+                    gameState = GameState.MAIN_MENU;
+                    Game.resetLevel(); //메인화면가면 난이도 1로 설정
+                }
+                else if(e.getKeyCode() == KeyEvent.VK_UP)
+                    Game.increaseDifficulty(); // 난이도 증가
+                else if(e.getKeyCode() == KeyEvent.VK_DOWN)
+                    Game.decreaseDifficulty(); //난이도 감소
                 break;
         }
     }
@@ -338,6 +379,10 @@ public class Framework extends Canvas{
         switch (gameState)
         {
             case MAIN_MENU:
+                if(e.getButton() == MouseEvent.BUTTON1)
+                    newGame();
+                break;
+            case LEVEL_SETTINGS:
                 if(e.getButton() == MouseEvent.BUTTON1)
                     newGame();
                 break;
