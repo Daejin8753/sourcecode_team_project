@@ -371,9 +371,9 @@ public class Framework extends Canvas{
             case MAIN_MENU:
                 if(e.getKeyCode() == KeyEvent.VK_ESCAPE)
                     System.exit(0);
-                else if(e.getKeyCode() == KeyEvent.VK_UP) {
+                else if(e.getKeyCode() == KeyEvent.VK_B) {
                     selectedStage = Math.min(selectedStage + 1, 5); // 최대 5스테이지 예시
-                } else if(e.getKeyCode() == KeyEvent.VK_DOWN) {
+                } else if(e.getKeyCode() == KeyEvent.VK_N) {
                     selectedStage = Math.max(selectedStage - 1, 1);// 최소 1스테이지
                 }
                 else if(e.getKeyCode() == KeyEvent.VK_L)  // 'L' 키로 LEVEL_SCREEN으로 전환
