@@ -271,16 +271,16 @@ public class Game {
     }
 
     private void setDifficultyLevel() {
-        if (score >= 300 - adjustScore(initialDifficultyLevel) && difficultyLevel == 1) {
+        if (score >= 3000 - adjustScore(initialDifficultyLevel) && difficultyLevel == 1) {
             difficultyLevel = 2;
             runawayDucks = 0;
-        } else if (score >= 600 - adjustScore(initialDifficultyLevel) && difficultyLevel == 2) {
+        } else if (score >= 6000 - adjustScore(initialDifficultyLevel) && difficultyLevel == 2) {
             difficultyLevel = 3;
             runawayDucks = 0;
-        } else if (score >= 900 - adjustScore(initialDifficultyLevel) && difficultyLevel == 3) {
+        } else if (score >= 9000 - adjustScore(initialDifficultyLevel) && difficultyLevel == 3) {
             difficultyLevel = 4;
             runawayDucks = 0;
-        } else if (score >= 1200 - adjustScore(initialDifficultyLevel) && difficultyLevel == 4) {
+        } else if (score >= 12000 - adjustScore(initialDifficultyLevel) && difficultyLevel == 4) {
             difficultyLevel = 5;
             runawayDucks = 0;
         }
