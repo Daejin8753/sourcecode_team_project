@@ -85,6 +85,10 @@ public class Framework extends Canvas{
      */
     private BufferedImage shootTheDuckMenuImg;
 
+    private int highScore = 0;
+    private int currentScore = 0;
+    private int selectedStage = 1;
+
 
     public Framework ()
     {
@@ -235,6 +239,10 @@ public class Framework extends Canvas{
                 g2d.drawString("왼쪽 마우스 버튼을 사용해 오리를 쏘세요.", frameWidth / 2 - 83, (int)(frameHeight * 0.65));
                 g2d.drawString("게임을 시작하려면 왼쪽 마우스 버튼을 클릭하세요.", frameWidth / 2 - 100, (int)(frameHeight * 0.67));
                 g2d.drawString("게임을 종료하려면 언제든지 ESC를 누르세요.", frameWidth / 2 - 75, (int)(frameHeight * 0.70));
+                g2d.setColor(Color.yellow);
+                g2d.drawString("최고 점수: " + highScore, frameWidth / 2 - 50, (int)(frameHeight * 0.80));
+                g2d.setColor(Color.white);
+                g2d.drawString("스테이지 선택: " + selectedStage, frameWidth / 2 - 50, (int)(frameHeight * 0.75));
                 g2d.setColor(Color.white);
                 g2d.drawString("WWW.GAMETUTORIAL.NET", 7, frameHeight - 5);
                 break;
@@ -279,7 +287,20 @@ public class Framework extends Canvas{
         lastTime = System.nanoTime();
 
         game = new Game();
+        game.setStage(selectedStage); // 선택된 스테이지로 게임 시작
+        gameState = GameState.PLAYING;
     }
+    /**
+     * 게임이 끝날 때 점수 갱신 로직 추가
+     */
+    public void endGame(int score) {
+        currentScore = score;
+        if (score > highScore) {
+            highScore = score; // 최고 스코어 갱신
+        }
+        gameState = GameState.GAMEOVER;
+    }
+
 
     /**
      * 게임을 재시작함 - 게임 시간을 재설정하고 게임 객체의 RestartGame() 메서드를 호출하여 몇 가지 변수를 재설정함.
@@ -291,6 +312,8 @@ public class Framework extends Canvas{
         lastTime = System.nanoTime();
 
         game.RestartGame();
+        // 스테이지 시작 시 선택된 스테이지를 기반으로 설정
+        game.setStage(selectedStage);
 
         // 게임 상태를 변경하여 게임을 시작할 수 있도록 함.
         gameState = GameState.PLAYING;
@@ -348,6 +371,11 @@ public class Framework extends Canvas{
             case MAIN_MENU:
                 if(e.getKeyCode() == KeyEvent.VK_ESCAPE)
                     System.exit(0);
+                else if(e.getKeyCode() == KeyEvent.VK_UP) {
+                    selectedStage = Math.min(selectedStage + 1, 5); // 최대 5스테이지 예시
+                } else if(e.getKeyCode() == KeyEvent.VK_DOWN) {
+                    selectedStage = Math.max(selectedStage - 1, 1);// 최소 1스테이지
+                }
                 else if(e.getKeyCode() == KeyEvent.VK_L)  // 'L' 키로 LEVEL_SCREEN으로 전환
                     gameState = GameState.LEVEL_SETTINGS;
                 break;
