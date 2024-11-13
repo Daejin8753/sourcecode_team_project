@@ -118,7 +118,6 @@ public class Game {
 
     private ArrayList<Item> items = new ArrayList<>(); // 화면에 표시된 아이템 목록
     private BufferedImage itemImg; // 아이템 이미지
-    private int currentStage = 1; // 현재 스테이지를 저장하는 변수
 
 
 
@@ -143,44 +142,7 @@ public class Game {
         };
         threadForInitGame.start();
     }
-    /**
-     * 스테이지를 설정하고, 스테이지에 따른 난이도나 설정을 적용합니다.
-     * @param stage 선택된 스테이지 번호
-     */
-    public void setStage(int stage) {
-        this.currentStage = stage;
 
-        // 스테이지에 따른 난이도 설정
-        switch (stage) {
-            case 1:
-                difficultyLevel = 0; // 쉬운 난이도
-                feverDuration = 5000; // 피버타임 지속 시간 조정
-                break;
-            case 2:
-                difficultyLevel = 1; // 보통 난이도
-                feverDuration = 4000;
-                break;
-            case 3:
-                difficultyLevel = 2; // 어려운 난이도
-                feverDuration = 3000;
-                break;
-            case 4:
-                difficultyLevel = 3; // 매우 어려운 난이도
-                feverDuration = 2000;
-                break;
-            case 5:
-                difficultyLevel = 4; // 극한 난이도
-                feverDuration = 1000;
-                break;
-            default:
-                difficultyLevel = 0; // 기본적으로 쉬운 난이도
-                feverDuration = 5000;
-                break;
-        }
-
-        // 난이도에 따른 오리 생성 시간 조정
-        AdjustDuckSpawnTime();
-    }
 
     protected static void increaseDifficulty() {
         if (difficultyLevel < 5) {
@@ -237,7 +199,6 @@ public class Game {
         timeBetweenShots = Framework.secInNanosec / 3;
         difficultyLevel = getDifficultyLevel();
         initialDifficultyLevel = difficultyLevel;
-        setStage(currentStage); // 기본적으로 스테이지 1로 설정
 
     }
     private void AdjustDuckSpawnTime() {
@@ -299,7 +260,6 @@ public class Game {
         shoots = 0;
         difficultyLevel = initialDifficultyLevel;
         lastTimeShoot = 0;
-        setStage(currentStage); // 현재 스테이지로 설정
     }
     private int getMaxDucksByDifficulty() {
         switch(difficultyLevel) {
