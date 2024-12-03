@@ -288,7 +288,7 @@ public class Game {
     }
 
     private int adjustScore(int x){
-        return 300*(x - 1);
+        return 3000*(x - 1);
     }
 
     // 난이도에 따른 오리의 속도 조정
