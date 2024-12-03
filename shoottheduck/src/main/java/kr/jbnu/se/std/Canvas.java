@@ -29,21 +29,13 @@ public abstract class Canvas extends JPanel implements KeyListener, MouseListene
     private static boolean[] mouseState = new boolean[3];
 
 
-    public Canvas()
-    {
+    protected Canvas() {
         // 더블 버퍼를 사용하여 화면에 그림을 그림.
         this.setDoubleBuffered(true);
         this.setFocusable(true);
         this.setBackground(Color.black);
 
-        // 직접 마우스 커서를 그리거나 마우스 커서를 숨기고 싶다면,
-        // "true"를 넣으면 마우스 커서가 사라짐.
-        if(true)
-        {
-            BufferedImage blankCursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
-            Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(blankCursorImg, new Point(0, 0), null);
-            this.setCursor(blankCursor);
-        }
+        setCustomCursor();                  //바로 밑에 커서 설정 메서드.
 
         // JPanel에 키보드 리스너를 추가하여 이 컴포넌트로부터 키 이벤트를 수신함.
         this.addKeyListener(this);
@@ -51,6 +43,17 @@ public abstract class Canvas extends JPanel implements KeyListener, MouseListene
         this.addMouseListener(this);
     }
 
+    private void setCustomCursor() {
+        try {
+            BufferedImage blankCursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+            Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(blankCursorImg, new Point(0, 0), null);
+            this.setCursor(blankCursor);
+        } catch (Exception e) {
+            // 예외 발생 시 기본 커서로 대체.
+            this.setCursor(Cursor.getDefaultCursor());
+            e.printStackTrace(); // 디버깅 목적으로 출력
+        }
+    }
 
     // 이 메서드는 kr.jbnu.se.std.Framework.java에서 오버라이딩 되며, 화면에 그리기 위해 사용됨.
     public abstract void Draw(Graphics2D g2d);
@@ -71,8 +74,8 @@ public abstract class Canvas extends JPanel implements KeyListener, MouseListene
      * @param key 상태를 확인하고자 하는 키의 번호.
      * @return 키가 눌려 있으면 true, 그렇지 않으면 false.
      */
-    public static boolean keyboardKeyState(int key)
-    {
+    public static boolean keyboardKeyState(int key) {
+
         return keyboardState[key];
     }
 
@@ -84,9 +87,12 @@ public abstract class Canvas extends JPanel implements KeyListener, MouseListene
     }
 
     @Override
-    public void keyReleased(KeyEvent e)
-    {
+    public void keyReleased(KeyEvent e) {
+        // keyboard state 업데이트.
         keyboardState[e.getKeyCode()] = false;
+
+        // SonarLint: 이 메서드는 keyReleasedFramework 추상 메서드를 호출하기 때문에 static으로 변경할 수 없음.
+        // keyboardState 배열은 static이지만, keyReleasedFramework는 인스턴스 메서드로 유지되어야 함.
         keyReleasedFramework(e);
     }
 
@@ -111,8 +117,7 @@ public abstract class Canvas extends JPanel implements KeyListener, MouseListene
     }
 
     // 마우스 키 상태 설정.
-    private void mouseKeyStatus(MouseEvent e, boolean status)
-    {
+    private static void mouseKeyStatus(MouseEvent e, boolean status) {
         if(e.getButton() == MouseEvent.BUTTON1)
             mouseState[0] = status;
         else if(e.getButton() == MouseEvent.BUTTON2)
