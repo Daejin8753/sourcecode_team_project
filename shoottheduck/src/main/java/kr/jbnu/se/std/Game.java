@@ -11,21 +11,24 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 
-/**
- * Actual game.
- *
- * @author www.gametutorial.net
- */
 
 public class Game {
 
-
+    /**
+     * kr.jbnu.se.std.Duck image.
+     */
+    private BufferedImage duckImg;
+    private BufferedImage strongDuckImg;
+    private BufferedImage fastDuckImg;
     private BufferedImage badDuckImg;
+
+
     /**
      * We use this to generate a random number.
      */
@@ -80,10 +83,6 @@ public class Game {
      */
     private BufferedImage grassImg;
 
-    /**
-     * kr.jbnu.se.std.Duck image.
-     */
-    private BufferedImage duckImg;
 
     /**
      * Shotgun sight image.
@@ -121,23 +120,24 @@ public class Game {
 
 
 
-    public Game()
-    {
+    public Game() {
+
         random = new Random();
         ducks = new ArrayList<>();
         LoadContent();
 
-        Framework.gameState = Framework.GameState.GAME_CONTENT_LOADING;
+        Framework.GameState.changeState(Framework.GameState.GAME_CONTENT_LOADING);
 
         Thread threadForInitGame = new Thread() {
             @Override
             public void run(){
                 // Sets variables and objects for the game.
                 Initialize();
+
                 // Load game files (images, sounds, ...)
                 LoadContent();
 
-                Framework.gameState = Framework.GameState.PLAYING;
+                Framework.GameState.changeState(Framework.GameState.PLAYING);
             }
         };
         threadForInitGame.start();
@@ -145,38 +145,26 @@ public class Game {
 
 
     protected static void increaseDifficulty() {
-        if (difficultyLevel < 5) {
-            difficultyLevel++;
-        }
+        if (difficultyLevel < 5) difficultyLevel++;
     }
 
     protected static void decreaseDifficulty() {
-        if (difficultyLevel > 1) {
-            difficultyLevel--;
-        }
+        if (difficultyLevel > 1) difficultyLevel--;
     }
 
     protected static int getDifficultyLevel(){
-        if (difficultyLevel == 0) { // 초기 값이 설정되지 않은 경우
-            difficultyLevel = 1; // 초기 난이도를 1로 설정
-        }
+        if (difficultyLevel == 0) difficultyLevel = 1;              // 초기 값이 설정되지 않은 경우, 초기 난이도를 1로 설정
         return difficultyLevel;
     }
 
     // 초기 난이도를 설정하는 메서드
-    public static int getInitialDifficultyLevel() {
-        initialDifficultyLevel = difficultyLevel; // 초기 난이도를 설정한 값을 저장
-        return initialDifficultyLevel;// 처음 설정한 난이도를 현재 난이도로 적용
+
+    public static int resetLevel() {
+        initialDifficultyLevel = 1;                                 // 난이도를 1로 초기화.
+        difficultyLevel = initialDifficultyLevel;                   // 그걸 난이도 값 에 넣음.
+        return difficultyLevel;
     }
 
-    public static void resetLevel() {
-        initialDifficultyLevel = 1;
-        difficultyLevel = initialDifficultyLevel;
-    }
-
-    public static void resetToInitialDifficulty() {
-        difficultyLevel = getInitialDifficultyLevel();
-    }
 
     /**
      * Set variables and objects for the game.
@@ -186,7 +174,7 @@ public class Game {
         random = new Random();
         font = new Font("monospaced", Font.BOLD, 18);
 
-        ducks = new ArrayList<Duck>();
+        ducks = new ArrayList<>();
 
         runawayDucks = 0;
         killedDucks = 0;
@@ -196,7 +184,7 @@ public class Game {
         killCount = 0; // 잡은 오리 수 초기화
         isDoubleScoreActive = false; // 점수 2배 비활성화
         lastTimeShoot = 0;
-        timeBetweenShots = Framework.secInNanosec / 3;
+        timeBetweenShots = Framework.SEC_IN_NANOSEC / 3;
         difficultyLevel = getDifficultyLevel();
         initialDifficultyLevel = difficultyLevel;
 
@@ -223,8 +211,11 @@ public class Game {
             duckImg = ImageIO.read(duckImgUrl);
 
             URL sightImgUrl = this.getClass().getResource("/images/sight.png");
+            sightImg = ImageIO.read(sightImgUrl);
 
-            duckImg = ImageIO.read(duckImgUrl);
+            URL strongDuckImgUrl = this.getClass().getResource("/images/strong_duck.png");
+            strongDuckImg = ImageIO.read(strongDuckImgUrl);
+
             // BadDuck 이미지 로드
             URL badDuckImgUrl = this.getClass().getResource("/images/bad_duck.png");
             badDuckImg = ImageIO.read(badDuckImgUrl);
@@ -232,7 +223,6 @@ public class Game {
             URL itemImgUrl = this.getClass().getResource("/images/item.png"); // 아이템 이미지 경로
             itemImg = ImageIO.read(itemImgUrl);
 
-            sightImg = ImageIO.read(sightImgUrl);
             sightImgMiddleWidth = sightImg.getWidth() / 2;
             sightImgMiddleHeight = sightImg.getHeight() / 2;
 
@@ -252,24 +242,16 @@ public class Game {
         ducks.clear();
 
         // We set last duckt time to zero.
-        Duck.lastDuckTime = 0;
+        Duck.resetLastDuckTime();
 
         runawayDucks = 0;
         killedDucks = 0;
         score = 0;
         shoots = 0;
-        difficultyLevel = initialDifficultyLevel;
+        resetLevel();               // 초기 난이도를 1로 설정.
         lastTimeShoot = 0;
     }
-    private int getMaxDucksByDifficulty() {
-        switch(difficultyLevel) {
-            case 0: return 3;  // 쉬운 난이도에서 최대 3마리
-            case 1: return 4;  // 중간 난이도에서 최대 4마리
-            case 2: return 5;  // 어려운 난이도에서 최대 5마리
-            case 3: return 6;  // 매우 어려운 난이도에서 최대 6마리
-            default: return 5; // 기본적으로 5마리 제한
-        }
-    }
+
 
     private void setDifficultyLevel() {
         if (score >= 3000 - adjustScore(initialDifficultyLevel) && difficultyLevel == 1) {
@@ -293,127 +275,50 @@ public class Game {
 
     // 난이도에 따른 오리의 속도 조정
     private double adjustSpeedForDifficulty(double baseSpeed) {
-        return baseSpeed * Math.pow(1.2, difficultyLevel-1);
+        return baseSpeed * Math.pow(1.2, (double) difficultyLevel - 1);
     }
 
 
     /**
-     * Update game logic.
+     * update game logic.
      *
      * @param gameTime gameTime of the game.
      * @param mousePosition current mouse position.
      */
-    public void UpdateGame(long gameTime, Point mousePosition)
-    {
-        AdjustDuckSpawnTime(); // 난이도에 따른 오리 출현 간격 조정
-        setDifficultyLevel(); //난이도에 따른 오리 속도 조정
+    public void UpdateGame(long gameTime, Point mousePosition) {
 
-        if (killCount >= 5 && runawayDucks<=0 && !isFeverTimeActive) {
-            isFeverTimeActive = true;
-            feverStartTime = System.nanoTime();
-            timeBetweenShots = 0; // 사격 딜레이 없애기
-        }
+        // 난이도에 따른 조정
+        adjustDifficulty();
 
-        if (Canvas.mouseButtonState(MouseEvent.BUTTON3)) {
-            isZoomed = true;
-        } else {
-            isZoomed = false;
-        }
+        // 피버타임 조정
+        adjustFeverTime();
 
-        // 피버타임 동안 오리 출현 빈도 조정
-        if (isFeverTimeActive) {
-            if (System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks / 2) {
-                int direction = random.nextInt(2);
-                int startX;
-                double speed;
-                if (direction == 0) {
-                    startX = Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200);
-                    speed = adjustSpeedForDifficulty(Duck.duckLines[Duck.nextDuckLines][2]);
-                } else {
-                    startX = 0 - random.nextInt(200);
-                    speed = adjustSpeedForDifficulty(-Duck.duckLines[Duck.nextDuckLines][2]);
-                }
-                ducks.add(new Duck(startX, Duck.duckLines[Duck.nextDuckLines][1], speed, Duck.duckLines[Duck.nextDuckLines][3], duckImg));
+        // 줌 기능.
+        adjustZoom();
 
-                // 다음 라인으로 이동
-                Duck.nextDuckLines++;
-                if (Duck.nextDuckLines >= Duck.duckLines.length)
-                    Duck.nextDuckLines = 0;
+        // 피버타임 동안, 또는 평상시 오리 출현 빈도 조정
+        adjustSpawnFrequency();
 
-                Duck.lastDuckTime = System.nanoTime();
-            }
-        }
-        else {
-            if (ducks.size()<5&&System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks) {
-                int direction = random.nextInt(2);  // 0이면 오른쪽 -> 왼쪽, 1이면 왼쪽 -> 오른쪽
-                int startX;
-                double speed;
-                if (direction == 0) {  // 오른쪽에서 왼쪽으로 이동
-                    startX = Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200); // 기존과 동일하게 오른쪽에서 출발
-                    speed = adjustSpeedForDifficulty(Duck.duckLines[Duck.nextDuckLines][2]);  // 음수 속도 (왼쪽으로 이동)
-                } else {  // 왼쪽에서 오른쪽으로 이동
-                    startX = 0 - random.nextInt(200);  // 왼쪽에서 출발
-                    speed = adjustSpeedForDifficulty(-Duck.duckLines[Duck.nextDuckLines][2]);  // 양수 속도 (오른쪽으로 이동)
-                }
-
-                ducks.add(new Duck(startX, Duck.duckLines[Duck.nextDuckLines][1], speed, Duck.duckLines[Duck.nextDuckLines][3], duckImg));
-
-                if (random.nextInt(10) < 6) {  // 60% 확률로 일반 오리 생성
-                    ducks.add(new Duck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200),
-                            Duck.duckLines[Duck.nextDuckLines][1],
-                            adjustSpeedForDifficulty(Duck.duckLines[Duck.nextDuckLines][2]),
-                            Duck.duckLines[Duck.nextDuckLines][3],
-                            duckImg));
-                } else if (random.nextInt(10) < 2){  // 20% 확률로 BadDuck 생성
-                    ducks.add(new BadDuck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200),
-                            Duck.duckLines[Duck.nextDuckLines][1],
-                            adjustSpeedForDifficulty(Duck.duckLines[Duck.nextDuckLines][2]),
-                            Duck.duckLines[Duck.nextDuckLines][3],
-                            badDuckImg));
-                }
-                else {
-                    if (random.nextInt(10) < 2) { // 20% 확률로 FastDuck 출현
-                        ducks.add(new FastDuck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200),
-                                Duck.duckLines[Duck.nextDuckLines][1],
-                                adjustSpeedForDifficulty(Duck.duckLines[Duck.nextDuckLines][2]),
-                                Duck.duckLines[Duck.nextDuckLines][3],
-                                duckImg));
-                    }
-
-                }
-
-                Duck.nextDuckLines++;
-                if (Duck.nextDuckLines >= Duck.duckLines.length)
-                    Duck.nextDuckLines = 0;
-
-                Duck.lastDuckTime = System.nanoTime();
-            }
-        }
         // 피버타임 종료 처리
-        if (isFeverTimeActive && System.nanoTime() - feverStartTime >= feverDuration * 1000000) {
-            isFeverTimeActive = false; // 피버타임 종료
-            timeBetweenShots = Framework.secInNanosec / 3; // 사격 딜레이 원상 복구
-            killCount = 0; // 연속 사격 수 초기화
-        }
-        // Creates a new duck, if it's the time, and add it to the array list.
-        if(System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks)
-        {
+        endFeverTime();
+
+        // 새 오리 생성.
+        if(System.nanoTime() - Duck.getLastDuckTime() >= Duck.timeBetweenDucks) {
             // Here we create new duck and add it to the array list.
             ducks.add(new Duck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200), Duck.duckLines[Duck.nextDuckLines][1], adjustSpeedForDifficulty(Duck.duckLines[Duck.nextDuckLines][2]), Duck.duckLines[Duck.nextDuckLines][3], duckImg));
 
             // Here we increase nextDuckLines so that next duck will be created in next line.
-            Duck.nextDuckLines++;
+            Duck.increseNextDuckLines(Duck.duckLines.length);
             if(Duck.nextDuckLines >= Duck.duckLines.length)
-                Duck.nextDuckLines = 0;
+                Duck.resetNextDuckLines();
 
-            Duck.lastDuckTime = System.nanoTime();
+            Duck.updateLastDuckTime(System.nanoTime());
         }
 
-        // Update all of the ducks.
-        for(int i = 0; i < ducks.size(); i++)
-        {
+        // 모든 오리 업데이트.
+        for(int i = 0; i < ducks.size(); i++) {
             // Move the duck.
-            ducks.get(i).Update();
+            ducks.get(i).update();
 
             // Checks if the duck leaves the screen and remove it if it does.
             if(ducks.get(i).x < 0 - duckImg.getWidth())
@@ -423,83 +328,193 @@ public class Game {
             }
         }
 
-        // Does player shoots?
-        if(Canvas.mouseButtonState(MouseEvent.BUTTON1))
-        {
-            // Checks if it can shoot again.
-            if(System.nanoTime() - lastTimeShoot >= timeBetweenShots)
-            {
-                boolean hit = false;
-                shoots++;
 
-                // We go over all the ducks and we look if any of them was shoot.
-                for(int i = 0; i < ducks.size(); i++)
-                {
-                    Duck currentDuck = ducks.get(i);
-                    // We check, if the mouse was over ducks head or body, when player has shot.
-                    if(new Rectangle(ducks.get(i).x + 18, ducks.get(i).y     , 27, 30).contains(mousePosition) ||
-                            new Rectangle(ducks.get(i).x + 30, ducks.get(i).y + 30, 88, 25).contains(mousePosition))
-                    {
-                        killedDucks++;
-                        killCount++;
-                        // 점수 계산
-                        int scoreMultiplier = isDoubleScoreActive ? 2 : 1; // 점수 배수 결정
-                        score += currentDuck.score * scoreMultiplier;
-
-                        // 10마리 오리 잡으면 점수 2배 활성화
-                        if (killCount >= 10) {
-                            isDoubleScoreActive = true; // 점수 2배 활성화
-                        }
-
-                        // 도망간 오리 수 증가에 따른 점수 배수 되돌리기
-                        if (runawayDucks > 0 && runawayDucks % 1 == 0 && isDoubleScoreActive) {
-                            isDoubleScoreActive = false; // 점수 배수 비활성화
-                        }
-                        score += currentDuck.score;
-                        score += ducks.get(i).score;
-
-                        // Remove the duck from the array list.
-                        ducks.remove(i);
-                        hit = true;
-
-                        // We found the duck that player shoot so we can leave the for loop.
-                        break;
-                    }
-                }
-                if (!hit){
-                    miss++;
-                    score -= 10;
-                }
-
-                lastTimeShoot = System.nanoTime();
-            }
-        }
+        // 플레이어가 사격했는지 확인.
+        adjustShooting(mousePosition);
 
         // 아이템 업데이트
-        for (int i = 0; i < items.size(); i++) {
-            Item item = items.get(i);
+        updateItem(mousePosition);
+
+        // 200마리 놓치면 게임오버.
+        checkGameOver();
+    }
+
+    private void updateItem(Point mousePosition) {
+
+
+        Iterator<Item> iterator = items.iterator();
+        while (iterator.hasNext()) {
+            Item item = iterator.next();
 
             // 플레이어가 아이템을 획득했는지 체크
-            if (item.checkCollision(mousePosition) && !item.isCollected) {
+            if (item.checkCollision(mousePosition) && !item.isCollected()) {
                 item.collect(); // 아이템 수집
                 ActivateItemEffect(); // 아이템 효과 적용
             }
         }
-
-        // 아이템 업데이트
-        for (int i = 0; i < items.size(); i++) {
-            Item item = items.get(i);
-
-            // 수집된 아이템 또는 일정 시간이 지난 아이템 삭제
-            if (item.isCollected || gameTime - item.spawnTime >= 5000) { // 5초 후 삭제
-                items.remove(i);
-                i--; // 인덱스 조정
-            }
-        }
-        // When 200 ducks runaway, the game ends.
-        if(runawayDucks >= 200)
-            Framework.gameState = Framework.GameState.GAMEOVER;
     }
+
+    private void adjustDifficulty() {
+        AdjustDuckSpawnTime(); // 난이도에 따른 오리 출현 간격 조정
+        setDifficultyLevel(); // 난이도에 따른 오리 속도 조정
+    }
+
+    private void adjustFeverTime() {
+        if (killCount >= 5 && runawayDucks <= 0 && !isFeverTimeActive) {
+            isFeverTimeActive = true;
+            feverStartTime = System.nanoTime();
+            timeBetweenShots = 0; // 사격 딜레이 없애기
+        }
+    }
+
+    private void adjustZoom() {
+        if (Canvas.mouseButtonState(MouseEvent.BUTTON3)) {
+            isZoomed = true;
+        } else {
+            isZoomed = false;
+        }
+    }
+
+    private void adjustSpawnFrequency(){
+        if (isFeverTimeActive) {
+            spawnFeverTime();
+        }
+        else {
+            spawnNormally();
+        }
+    }
+
+    private void spawnFeverTime(){
+        if (System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks / 2) {
+            createDuck();
+            Duck.lastDuckTime = System.nanoTime();
+        }
+    }
+
+    private void spawnNormally(){
+        if (ducks.size()<5&&System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks) {
+            createDuck();
+
+            if (random.nextInt(10) < 6) {  // 60% 확률로 일반 오리 생성
+                ducks.add(new Duck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200),
+                        Duck.duckLines[Duck.nextDuckLines][1],
+                        adjustSpeedForDifficulty(Duck.duckLines[Duck.nextDuckLines][2]),
+                        Duck.duckLines[Duck.nextDuckLines][3],
+                        duckImg));
+            } else if (random.nextInt(10) < 3){  // 30% 확률로 BadDuck 생성
+                ducks.add(new BadDuck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200),
+                        Duck.duckLines[Duck.nextDuckLines][1],
+                        adjustSpeedForDifficulty(Duck.duckLines[Duck.nextDuckLines][2]),
+                        Duck.duckLines[Duck.nextDuckLines][3],
+                        badDuckImg));
+            } else if (random.nextInt(10) < 2.5){  // 25% 확률로 strongDuck 생성
+                ducks.add(new StrongDuck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200),
+                        Duck.duckLines[Duck.nextDuckLines][1],
+                        adjustSpeedForDifficulty(Duck.duckLines[Duck.nextDuckLines][2]),
+                        Duck.duckLines[Duck.nextDuckLines][3],
+                        strongDuckImg));
+            } else {
+                if (random.nextInt(10) < 3) { // 30% 확률로 FastDuck 출현
+                    ducks.add(new FastDuck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200),
+                            Duck.duckLines[Duck.nextDuckLines][1],
+                            adjustSpeedForDifficulty(Duck.duckLines[Duck.nextDuckLines][2]),
+                            Duck.duckLines[Duck.nextDuckLines][3],
+                            fastDuckImg));
+                }
+
+            }
+            Duck.lastDuckTime = System.nanoTime();
+        }
+    }
+
+    private void createDuck(){
+        int direction = random.nextInt(2);  // 0이면 오른쪽 -> 왼쪽, 1이면 왼쪽 -> 오른쪽
+        int startX;
+        double speed;
+        if (direction == 0) {  // 오른쪽에서 왼쪽으로 이동
+            startX = Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200); // 기존과 동일하게 오른쪽에서 출발
+            speed = adjustSpeedForDifficulty(Duck.duckLines[Duck.nextDuckLines][2]);  // 음수 속도 (왼쪽으로 이동)
+        } else {  // 왼쪽에서 오른쪽으로 이동
+            startX = 0 - random.nextInt(200);  // 왼쪽에서 출발
+            speed = adjustSpeedForDifficulty(-Duck.duckLines[Duck.nextDuckLines][2]);  // 양수 속도 (오른쪽으로 이동)
+        }
+        ducks.add(new Duck(startX, Duck.duckLines[Duck.nextDuckLines][1], speed, Duck.duckLines[Duck.nextDuckLines][3], duckImg));
+
+        // 다음 라인으로 이동
+        Duck.nextDuckLines++;
+        if (Duck.nextDuckLines >= Duck.duckLines.length)
+            Duck.nextDuckLines = 0;
+    }
+
+    private void endFeverTime() {
+        if (isFeverTimeActive && System.nanoTime() - feverStartTime >= feverDuration * 1000000) {
+            isFeverTimeActive = false;
+            timeBetweenShots = Framework.SEC_IN_NANOSEC / 3; // 사격 딜레이 원상 복구
+            killCount = 0; // 연속 사격 수 초기화
+        }
+    }
+
+    private void adjustShooting(Point mousePosition) {
+        if (Canvas.mouseButtonState(MouseEvent.BUTTON1) && System.nanoTime() - lastTimeShoot >= timeBetweenShots) {
+            boolean hit = false;
+            shoots++;
+
+            // 모든 Duck에 대해 처리
+            for (int i = 0; i < ducks.size() && !hit; i++) { // hit이 true면 루프 종료
+                Duck currentDuck = ducks.get(i);
+
+                if (currentDuck instanceof StrongDuck) {
+                    hit = CheckStrongDuckHit((StrongDuck) currentDuck, mousePosition);
+                } else if (isDuckHit(currentDuck, mousePosition)) {
+                    handleDuckHit(currentDuck, i);
+                    hit = true;
+                }
+            }
+
+            // FastDuck을 맞췄는지 확인(피버타임에 돌입할지 조정)
+            CheckFastDuckHit(mousePosition);
+
+            if (!hit) {
+                miss++;
+                score -= 10;
+            }
+
+            lastTimeShoot = System.nanoTime();
+        }
+    }
+
+    private boolean isDuckHit(Duck currentDuck, Point mousePosition) {
+        if (currentDuck instanceof StrongDuck) {
+            return new Rectangle(currentDuck.x + 10, currentDuck.y, 40, 50).contains(mousePosition);
+        } else {
+            return new Rectangle(currentDuck.x + 18, currentDuck.y, 27, 30).contains(mousePosition) ||
+                    new Rectangle(currentDuck.x + 30, currentDuck.y + 30, 88, 25).contains(mousePosition);
+        }
+    }
+
+    private void handleDuckHit(Duck currentDuck, int duckIndex) {
+        killedDucks++;
+        killCount++;
+        int scoreMultiplier = isDoubleScoreActive ? 2 : 1;
+        score += currentDuck.score * scoreMultiplier;
+
+        if (killCount >= 10) {
+            isDoubleScoreActive = true;
+        }
+
+        if (runawayDucks > 0 && isDoubleScoreActive) {
+            isDoubleScoreActive = false;
+        }
+
+        score += currentDuck.score;
+        ducks.remove(duckIndex);
+    }
+
+    private void checkGameOver() {
+        if (runawayDucks >= 200)
+            Framework.GameState.changeState(Framework.GameState.GAMEOVER);
+    }
+
     private void ActivateItemEffect() {
         // 30% 확률로 피버타임 활성화3
         if (random.nextInt(100) < 30) {
@@ -511,23 +526,37 @@ public class Game {
         for (int i = 0; i < ducks.size(); i++) {
             Duck currentDuck = ducks.get(i);
 
-            if (currentDuck instanceof FastDuck) {
-                // FastDuck 맞추기 체크
-                if (new Rectangle(currentDuck.x + 18, currentDuck.y, 27, 30).contains(mousePosition)) {
-                    // 30% 확률로 피버타임 돌입
-                    if (random.nextInt(100) < 30) {
-                        ActivateFeverTime();
-                    }
-
-                    // 점수 추가 및 아이템 드롭
-                    score += currentDuck.score * 2;
-                    DropItem(currentDuck.x, currentDuck.y); // 아이템 드롭
-                    ducks.remove(i); // 오리 제거
-                    break;
+            // FastDuck인 경우 추가 처리
+            if (currentDuck instanceof FastDuck && isDuckHit(currentDuck, mousePosition)) {
+                // 30% 확률로 피버 타임 돌입
+                if (random.nextInt(100) < 30) { // 0~99 범위에서 30 미만이면 성공
+                    ActivateFeverTime();
                 }
+
+                score += currentDuck.score * 2; // 점수 추가 (빠른 오리는 2배 점수)
+                DropItem(currentDuck.x, currentDuck.y); // 아이템 드롭
+                ducks.remove(i); // 빠른 오리 제거
+                return;
             }
         }
+
     }
+    private boolean CheckStrongDuckHit(StrongDuck strongDuck, Point mousePosition) {
+        // StrongDuck이 맞은 경우 처리
+        if (isDuckHit(strongDuck, mousePosition) && random.nextInt(100) < 50) { // StrongDuck 맞았고, 50% 확률로 사망
+            ducks.remove(strongDuck); // 오리 제거
+            killedDucks++;
+            killCount++;
+
+            // 점수 계산
+            int scoreMultiplier = isDoubleScoreActive ? 2 : 1;
+            score += strongDuck.score * scoreMultiplier;
+
+            return true;
+        }
+        return false;
+    }
+
     // 아이템 드롭 기능 추가
     private void DropItem(int x, int y) {
         // 30% 확률로 아이템 드롭
@@ -554,24 +583,21 @@ public class Game {
         if (isZoomed) {
             g2d.scale(1.2, 1.2); // 화면을 1.2배 확대
         }
-        g2d.drawImage(backgroundImg, 0, 0, Framework.frameWidth, Framework.frameHeight, null);
+        g2d.drawImage(backgroundImg, 0, 0, Framework.FRAME_WIDTH, Framework.FRAME_HEIGHT, null);
 
         // 피버타임이 활성화된 동안에는 화면 전체를 반투명한 색으로 덮는 효과를 추가
         if (isFeverTimeActive) {
             g2d.setColor(new Color(255, 0, 0, 100));  // 빨간색 반투명 레이어
-            g2d.fillRect(0, 0, Framework.frameWidth, Framework.frameHeight);
+            g2d.fillRect(0, 0, Framework.FRAME_WIDTH, Framework.FRAME_HEIGHT);
         }
 
         // Here we draw all the ducks.
         for(int i = 0; i < ducks.size(); i++)
         {
-            ducks.get(i).Draw(g2d);
+            ducks.get(i).draw(g2d);
         }
-        // 아이템 그리기
-        for (int i = 0; i < items.size(); i++) {
-            items.get(i).Draw(g2d);
-        }
-        g2d.drawImage(grassImg, 0, Framework.frameHeight - grassImg.getHeight(), Framework.frameWidth, grassImg.getHeight(), null);
+
+        g2d.drawImage(grassImg, 0, Framework.FRAME_HEIGHT - grassImg.getHeight(), Framework.FRAME_WIDTH, grassImg.getHeight(), null);
 
         g2d.drawImage(sightImg, mousePosition.x - sightImgMiddleWidth, mousePosition.y - sightImgMiddleHeight, null);
 
@@ -600,10 +626,10 @@ public class Game {
 
         // The first text is used for shade.
         g2d.setColor(Color.black);
-        g2d.drawString("kr.jbnu.se.std.Game Over", Framework.frameWidth / 2 - 39, (int)(Framework.frameHeight * 0.65) + 1);
-        g2d.drawString("Press space or enter to restart.", Framework.frameWidth / 2 - 149, (int)(Framework.frameHeight * 0.70) + 1);
+        g2d.drawString("Game Over", Framework.FRAME_WIDTH / 2 - 39, (int)(Framework.FRAME_HEIGHT * 0.65) + 1);
+        g2d.drawString("Press space or enter to restart.", Framework.FRAME_WIDTH / 2 - 149, (int)(Framework.FRAME_HEIGHT * 0.70) + 1);
         g2d.setColor(Color.red);
-        g2d.drawString("kr.jbnu.se.std.Game Over", Framework.frameWidth / 2 - 40, (int)(Framework.frameHeight * 0.65));
-        g2d.drawString("Press space or enter to restart.", Framework.frameWidth / 2 - 150, (int)(Framework.frameHeight * 0.70));
+        g2d.drawString("Game Over", Framework.FRAME_WIDTH / 2 - 40, (int)(Framework.FRAME_HEIGHT * 0.65));
+        g2d.drawString("Press space or enter to restart.", Framework.FRAME_WIDTH / 2 - 150, (int)(Framework.FRAME_HEIGHT * 0.70));
     }
 }

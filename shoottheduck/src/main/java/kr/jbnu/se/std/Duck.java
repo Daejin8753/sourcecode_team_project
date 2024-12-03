@@ -13,14 +13,9 @@ public class Duck {
 
     /**
      * 새로운 오리를 생성하기 위해 지나야 하는 시간.
+     * 게임 난이도에 따라 동적으로 변경되기에, SonarLint의 경고를 무시함.
      */
-    public static long timeBetweenDucks = Framework.secInNanosec / 2;
-    /**
-     * 마지막으로 오리가 생성된 시간.
-     */
-    public static long lastDuckTime = 0;
-
-    public static long duckSpeed = 0;
+    public static long timeBetweenDucks = Framework.SEC_IN_NANOSEC / 2;
 
 
 
@@ -30,17 +25,47 @@ public class Duck {
      * 오리의 속도는?
      * 오리가 가치 있는 점수는 얼마인가?
      */
-    public static int[][] duckLines = {
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.60), -2, 20},
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.65), -3, 30},
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.70), -4, 40},
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.78), -5, 50}
+    protected static int[][] duckLines = {
+            {Framework.FRAME_WIDTH, (int)(Framework.FRAME_HEIGHT * 0.60), -2, 20},
+            {Framework.FRAME_WIDTH, (int)(Framework.FRAME_HEIGHT * 0.65), -3, 30},
+            {Framework.FRAME_WIDTH, (int)(Framework.FRAME_HEIGHT * 0.70), -4, 40},
+            {Framework.FRAME_WIDTH, (int)(Framework.FRAME_HEIGHT * 0.78), -5, 50}
     };
     /**
      * 다음 오리 라인을 나타냄.
+     * 오리가 생성될 때마다 동적으로 업데이트되므로 SonarLint의 경고를 무시함.
      */
-    public static int nextDuckLines = 0;
+    static int nextDuckLines = 0;
 
+    public static int getNextDuckLines() {
+        return nextDuckLines;
+    }
+
+    public static void resetNextDuckLines() {
+        nextDuckLines = 0;
+    }
+
+    public static void increseNextDuckLines(int lineCount) {
+        nextDuckLines = (nextDuckLines + 1) % lineCount;
+    }
+
+
+    /**
+     * 마지막으로 오리가 생성된 시간.
+     */
+    static long lastDuckTime;
+
+    public static void resetLastDuckTime() {
+        lastDuckTime = 0;
+    }
+
+    public static long getLastDuckTime() {
+        return lastDuckTime;
+    }
+
+    public static void updateLastDuckTime(long newTime) {
+        lastDuckTime = newTime;
+    }
 
     /**
      * 오리의 X 좌표.
@@ -76,23 +101,27 @@ public class Duck {
      * @param score 이 오리가 가치 있는 점수.
      * @param duckImg 오리 이미지.
      */
-    public Duck(int x, int y, double speed, int score, BufferedImage duckImg)
-    {
+    public Duck(int x, int y, double speed, int score, BufferedImage duckImg) {
         this.x = x;
         this.y = y;
 
         this.speed = speed;
 
-        this.score = score;
-
-        this.duckImg = duckImg;
+        this.duckImg = (duckImg != null) ? deepCopyBufferedImage(duckImg) : null;
     }
 
+    private BufferedImage deepCopyBufferedImage(BufferedImage image) {
+        BufferedImage copy = new BufferedImage(image.getWidth(), image.getHeight(), image.getType());
+        Graphics2D g2d = copy.createGraphics();
+        g2d.drawImage(image, 0, 0, null);
+        g2d.dispose();
+        return copy;
+    }
 
     /**
      * 오리를 이동시킴.
      */
-    public void Update() {
+    public void update() {
         x += speed;
     }
 
@@ -100,7 +129,7 @@ public class Duck {
      * 화면에 오리를 그림.
      * @param g2d Graphics2D
      */
-    public void Draw(Graphics2D g2d) {
+    public void draw(Graphics2D g2d) {
         g2d.drawImage(duckImg, x, y, null);
     }
 }
