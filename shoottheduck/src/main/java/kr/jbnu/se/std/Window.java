@@ -2,6 +2,7 @@ package kr.jbnu.se.std;
 
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
+import java.awt.*;
 
 /**
  * 프레임을 생성하고 속성을 설정함.
@@ -22,7 +23,7 @@ public class Window extends JFrame{
             // 이 프레임의 장식을 비활성화함.
             this.setUndecorated(true);
             // 프레임을 전체 화면으로 설정함.
-            this.setExtendedState(this.MAXIMIZED_BOTH);
+            this.setExtendedState(Frame.MAXIMIZED_BOTH);
         }
         else // 창 모드
         {
@@ -45,11 +46,6 @@ public class Window extends JFrame{
     public static void main(String[] args)
     {
         // 이벤트 디스패치 스레드를 사용하여 스레드 안전을 위해 UI를 빌드함.
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                new Window();
-            }
-        });
+        SwingUtilities.invokeLater(Window::new);
     }
 }

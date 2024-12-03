@@ -12,7 +12,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import java.awt.Font;
-import javax.swing.*;
 
 /**
  * kr.jbnu.se.std.Framework는 게임(kr.jbnu.se.std.Game.java)을 제어하고, 업데이트하며 화면에 그리기를 담당함.
@@ -27,95 +26,110 @@ public class Framework extends Canvas{
      * 프레임의 너비.
      */
 
-    public static int frameWidth;
+    public static final int FRAME_WIDTH = 800;
     /**
      * 프레임의 높이.
      */
-    public static int frameHeight;
+    public static final int FRAME_HEIGHT = 600;
 
     /**
      * 1초를 나노초로 나타낸 시간.
      * 1초 = 1,000,000,000 나노초
      */
-    public static final long secInNanosec = 1000000000L;
+    public static final long SEC_IN_NANOSEC = 1000000000L;
 
     /**
      * 1밀리초를 나노초로 나타낸 시간.
      * 1밀리초 = 1,000,000 나노초
      */
-    public static final long milisecInNanosec = 1000000L;
+    public static final long MILI_SEC_IN_NANOSEC = 1000000L;
 
     /**
      * FPS - 초당 프레임 수
      * 게임이 매 초 몇 번 업데이트되어야 하는지.
      */
-    private final int GAME_FPS = 60;
+    private static final int GAME_FPS = 60;
     /**
      * 업데이트 간의 대기 시간. 나노초 단위로 나타냄.
      */
-    private final long GAME_UPDATE_PERIOD = secInNanosec / GAME_FPS;
+    private static final long GAME_UPDATE_PERIOD = SEC_IN_NANOSEC / GAME_FPS;
 
-    private BufferedImage LevelbackgroundImg;
-
-    public static void changePanel(Game game) {
-    }
+    private transient BufferedImage levelbackgroundImg;
 
 
     /**
      * 게임의 가능한 상태들
      */
-    public static enum GameState{STARTING, VISUALIZING, GAME_CONTENT_LOADING, MAIN_MENU, OPTIONS, PLAYING, GAMEOVER, DESTROYED, PAUSED, LEVEL_SETTINGS}
+    public enum GameState {
+        STARTING,
+//        VISUALIZING,
+        GAME_CONTENT_LOADING,
+        MAIN_MENU,
+        PLAYING,
+        GAMEOVER,
+        PAUSED,
+        LEVEL_SETTINGS;
+
+        // 현재 게임 상태를 저장하는 변수 (초기값 설정)
+        private static GameState currentState = MAIN_MENU;
+
+        // 현재 상태를 반환
+        public static GameState getCurrentState() {
+            return currentState;
+        }
+
+        // 상태를 변경
+        public static void changeState(GameState newState) {
+            if (newState != null) {
+                currentState = newState;
+            }
+        }
+    }
     /**
      * 현재 게임 상태
      */
-    public static GameState gameState;
+
 
     /**
      * 게임에서 경과된 시간 (나노초 단위).
      */
     private long gameTime;
+
+    public long getGameTime() {
+        return gameTime;
+    }
+
     // 경과 시간을 계산하기 위해 사용됨.
     private long lastTime;
 
     // 실제 게임 객체
-    private Game game;
+    private transient Game game;
 
     /**
      * 메뉴 이미지.
      */
-    private BufferedImage shootTheDuckMenuImg;
+    private transient BufferedImage shootTheDuckMenuImg;
 
 
-    public Framework ()
-    {
+    public Framework () {
         super();
-
-        gameState = GameState.VISUALIZING;
 
         // 새로운 스레드에서 게임을 시작함.
         Thread gameThread = new Thread() {
             @Override
             public void run(){
-                GameLoop();
+                gameLoop();
             }
         };
         gameThread.start();
     }
 
-    /**
-     * 변수와 객체를 설정함.
-     * 이 메서드는 이 클래스의 변수와 객체를 설정하는 데 사용되며, 실제 게임의 변수와 객체는 kr.jbnu.se.std.Game.java에서 설정될 수 있음.
-     */
-    private void Initialize()
-    {
-
-    }
 
     /**
      * 파일을 로드함 - 이미지, 소리 등.
      * 이 메서드는 이 클래스의 파일을 로드하는 데 사용되며, 실제 게임의 파일은 kr.jbnu.se.std.Game.java에서 로드될 수 있음.
      */
-    private void LoadContent()
+    private void loadContent()
     {
         try
         {
@@ -123,107 +137,79 @@ public class Framework extends Canvas{
             shootTheDuckMenuImg = ImageIO.read(shootTheDuckMenuImgUrl);
 
             URL levelSettingBgImgUrl = this.getClass().getResource("/images/background.jpg");
-            LevelbackgroundImg = ImageIO.read(levelSettingBgImgUrl);
+            levelbackgroundImg = ImageIO.read(levelSettingBgImgUrl);
         }
         catch (IOException ex) {
             Logger.getLogger(Framework.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
+    private boolean isRunning = true;
     /**
      * 특정 시간 간격(GAME_UPDATE_PERIOD)마다 게임 로직을 업데이트하고 게임을 화면에 그림.
      */
-    private void GameLoop()
-    {
-        // 이 두 변수는 게임의 VISUALIZING 상태에서 사용됨. 프레임/창 해상도를 올바르게 가져오기 위해 시간을 기다리기 위해 사용함.
-        long visualizingTime = 0, lastVisualizingTime = System.nanoTime();
+    private void gameLoop() {
 
-        // 이 변수들은 스레드를 대기 상태로 설정하여 GAME_FPS를 맞추기 위해 사용됨.
-        long beginTime, timeTaken, timeLeft;
+        while(isRunning) {
 
-        while(true)
-        {
-            beginTime = System.nanoTime();
+            long beginTime = System.nanoTime();
 
-            switch (gameState)
-            {
+            switch (GameState.getCurrentState()) {
+
                 case PLAYING:
                     gameTime += System.nanoTime() - lastTime;
-
                     game.UpdateGame(gameTime, mousePosition());
-
                     lastTime = System.nanoTime();
                     break;
+
                 case PAUSED:
-                    // 일시정지 상태에서는 아무것도 하지 않음
-                    break;
+                    break;          // 일시정지 상태에서는 아무것도 하지 않음
+
                 case GAMEOVER:
                     //...
                     break;
                 case MAIN_MENU:
-                    //...
+                    loadContent();
                     break;
                 case LEVEL_SETTINGS:
-                    //...
-                    break;
-                case OPTIONS:
                     //...
                     break;
                 case GAME_CONTENT_LOADING:
                     //...
                     break;
                 case STARTING:
-                    // 변수와 객체를 설정함.
-                    Initialize();
-                    // 파일을 로드함 - 이미지, 소리 등.
-                    LoadContent();
-
                     // 위에서 호출된 모든 작업이 완료되면 게임 상태를 메인 메뉴로 변경함.
-                    gameState = GameState.MAIN_MENU;
+                    GameState.changeState(GameState.MAIN_MENU);
                     break;
-                case VISUALIZING:
-                    // Ubuntu OS에서 (구형 컴퓨터에서 테스트한 경우) this.getWidth() 메서드는 즉시 올바른 값을 반환하지 않음 (예: 프레임이 800px 너비여야 할 때 0을 반환하고 그 후 790, 마지막으로 798px).
-                    // 그래서 우리는 창/프레임이 올바른 크기로 설정되도록 1초를 기다림. 혹시 몰라서 'this.getWidth() > 1' 조건을 추가함.
-                    if(this.getWidth() > 1 && visualizingTime > secInNanosec)
-                    {
-                        frameWidth = this.getWidth();
-                        frameHeight = this.getHeight();
 
-                        // 프레임의 크기를 가져온 후 상태를 변경함.
-                        gameState = GameState.STARTING;
-                    }
-                    else
-                    {
-                        visualizingTime += System.nanoTime() - lastVisualizingTime;
-                        lastVisualizingTime = System.nanoTime();
-                    }
-                    break;
             }
 
             // 화면을 다시 그림.
             repaint();
 
             // 스레드를 대기 상태로 설정하여 GAME_FPS를 맞추기 위한 시간을 계산함.
-            timeTaken = System.nanoTime() - beginTime;
-            timeLeft = (GAME_UPDATE_PERIOD - timeTaken) / milisecInNanosec; // 밀리초 단위로 계산
-            // 시간이 10밀리초보다 적으면, 다른 스레드가 작업을 할 수 있도록 스레드를 10밀리초 동안 대기 상태로 설정함.
-            if (timeLeft < 10)
-                timeLeft = 10; // 최소 대기 시간 설정
+            long timeTaken = System.nanoTime() - beginTime;
+            long timeLeft = (GAME_UPDATE_PERIOD - timeTaken) / MILI_SEC_IN_NANOSEC; // 밀리초 단위로 계산
+
+            if (timeLeft < 10)                              // 시간이 10밀리초보다 적으면, 다른 스레드가 작업을 할 수 있도록 스레드를 10밀리초 동안 대기 상태로 설정함.
+                timeLeft = 10;                              // 최소 대기 시간 설정
+
             try {
-                // 필요한 지연 시간을 제공하고 다른 스레드가 작업을 할 수 있도록 제어를 양보함.
-                Thread.sleep(timeLeft);
-            } catch (InterruptedException ex) { }
+                Thread.sleep(timeLeft);                     // 필요한 지연 시간을 제공하고 다른 스레드가 작업을 할 수 있도록 제어를 양보함.
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt(); // 인터럽트 상태 복원
+                Logger.getLogger(Framework.class.getName()).log(Level.WARNING, "Game loop interrupted", ex);
+                isRunning = false; // 루프 종료
+            }
         }
     }
 
     /**
-     * 게임을 화면에 그림. GameLoop() 메서드에서 repaint() 메서드를 통해 호출됨.
+     * 게임을 화면에 그림. gameLoop() 메서드에서 repaint() 메서드를 통해 호출됨.
      */
     @Override
-    public void Draw(Graphics2D g2d)
-    {
-        switch (gameState)
-        {
+    public void Draw(Graphics2D g2d) {
+        switch (GameState.getCurrentState()) {
             case PLAYING:
                 game.Draw(g2d, mousePosition());
                 break;
@@ -231,29 +217,26 @@ public class Framework extends Canvas{
                 game.DrawGameOver(g2d, mousePosition());
                 break;
             case MAIN_MENU:
-                g2d.drawImage(shootTheDuckMenuImg, 0, 0, frameWidth, frameHeight, null);
-                g2d.drawString("왼쪽 마우스 버튼을 사용해 오리를 쏘세요.", frameWidth / 2 - 83, (int)(frameHeight * 0.65));
-                g2d.drawString("게임을 시작하려면 왼쪽 마우스 버튼을 클릭하세요.", frameWidth / 2 - 100, (int)(frameHeight * 0.67));
-                g2d.drawString("게임을 종료하려면 언제든지 ESC를 누르세요.", frameWidth / 2 - 75, (int)(frameHeight * 0.70));
+                g2d.drawImage(shootTheDuckMenuImg, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, null);
+                g2d.drawString("게임을 시작하려면 왼쪽 마우스 버튼을 클릭.", FRAME_WIDTH / 2 - 83, (int)(FRAME_HEIGHT * 0.65));
+                g2d.drawString("L 키로 난이도 설정.", FRAME_WIDTH / 2 - 100, (int)(FRAME_HEIGHT * 0.67));
+                g2d.drawString("게임을 종료하려면 언제든지 ESC.", FRAME_WIDTH / 2 - 75, (int)(FRAME_HEIGHT * 0.70));
                 g2d.setColor(Color.white);
-                g2d.drawString("WWW.GAMETUTORIAL.NET", 7, frameHeight - 5);
+                g2d.drawString("WWW.GAMETUTORIAL.NET", 7, FRAME_HEIGHT - 5);
                 break;
             case PAUSED:  // 일시정지 화면 출력
                 g2d.setColor(Color.white);
-                g2d.drawString("게임이 일시정지됨", frameWidth / 2 - 50, frameHeight / 2 - 20);
-                g2d.drawString("게임을 다시 시작하려면 'P'를 누르세요", frameWidth / 2 - 60, frameHeight / 2);
-                break;
-            case OPTIONS:
-                //...
+                g2d.drawString("게임이 일시정지됨", FRAME_WIDTH / 2 - 50, FRAME_HEIGHT / 2 - 20);
+                g2d.drawString("게임을 다시 시작하려면 'P'를 누르세요", FRAME_WIDTH / 2 - 60, FRAME_HEIGHT / 2);
                 break;
             case GAME_CONTENT_LOADING:
                 g2d.setColor(Color.white);
-                g2d.drawString("게임 로딩 중", frameWidth / 2 - 50, frameHeight / 2);
+                g2d.drawString("게임 로딩 중", FRAME_WIDTH / 2 - 50, FRAME_HEIGHT / 2);
                 break;
             case LEVEL_SETTINGS:
-                g2d.drawImage(LevelbackgroundImg, 0, 0, frameWidth, frameHeight, null);
+                g2d.drawImage(levelbackgroundImg, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, null);
                 g2d.setColor(Color.white);
-                g2d.drawString("WWW.GAMETUTORIAL.NET", 7, frameHeight - 5);
+                g2d.drawString("WWW.GAMETUTORIAL.NET", 7, FRAME_HEIGHT - 5);
                 g2d.setColor(Color.black);
                 g2d.setFont(new Font("Malgun Gothic", Font.BOLD, 13));
                 g2d.drawString("ESC 또는 L키로 메인 메뉴로 돌아갈 수 있습니다", 10, 20);
@@ -265,6 +248,12 @@ public class Framework extends Canvas{
                 g2d.drawString("LEVEL    :    " + currentLevel, 300, 410); //현재 난이도 표시
                 g2d.drawString("▲", 435, 370);
                 g2d.drawString("▼", 435, 450);
+                break;
+            case STARTING:
+                g2d.drawString("로딩중...", FRAME_WIDTH / 2 - 50, FRAME_HEIGHT / 2 - 20);
+                break;
+            default:
+
                 break;
         }
     }
@@ -279,7 +268,7 @@ public class Framework extends Canvas{
         lastTime = System.nanoTime();
 
         game = new Game();
-        gameState = GameState.PLAYING;
+        GameState.changeState(GameState.PLAYING);
     }
 
 
@@ -295,7 +284,7 @@ public class Framework extends Canvas{
         game.RestartGame();
 
         // 게임 상태를 변경하여 게임을 시작할 수 있도록 함.
-        gameState = GameState.PLAYING;
+        GameState.changeState(GameState.PLAYING);
     }
 
     /**
@@ -327,46 +316,63 @@ public class Framework extends Canvas{
      * @param e KeyEvent
      */
     @Override
-    public void keyReleasedFramework(KeyEvent e)
-    {
-        switch (gameState)
-        {
+    public void keyReleasedFramework(KeyEvent e) {
+        switch (GameState.getCurrentState()) {
             case GAMEOVER:
-                if(e.getKeyCode() == KeyEvent.VK_ESCAPE)
-                    System.exit(0);
-                else if(e.getKeyCode() == KeyEvent.VK_SPACE || e.getKeyCode() == KeyEvent.VK_ENTER)
-                    restartGame();
+                handleGameOverState(e);
                 break;
             case PLAYING:
-                if(e.getKeyCode() == KeyEvent.VK_ESCAPE)
-                    System.exit(0);
-                else if(e.getKeyCode() == KeyEvent.VK_P)  // P 키로 일시정지
-                    gameState = GameState.PAUSED;
+                handlePlayingState(e);
                 break;
             case PAUSED:
-                if(e.getKeyCode() == KeyEvent.VK_P)  // P 키로 일시정지 해제
-                    gameState = GameState.PLAYING;
+                handlePausedState(e);
                 break;
             case MAIN_MENU:
-                if(e.getKeyCode() == KeyEvent.VK_ESCAPE)
-                    System.exit(0);
-                else if(e.getKeyCode() == KeyEvent.VK_L)  // 'L' 키로 LEVEL_SCREEN으로 전환
-                    gameState = GameState.LEVEL_SETTINGS;
+                handleMainMenuState(e);
                 break;
             case LEVEL_SETTINGS:
-                if(e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-                    gameState = GameState.MAIN_MENU;
-                    Game.resetLevel(); //메인화면가면 난이도 1로 설정
-                }
-                else if(e.getKeyCode() == KeyEvent.VK_L){
-                    gameState = GameState.MAIN_MENU;
-                    Game.resetLevel(); //메인화면가면 난이도 1로 설정
-                }
-                else if(e.getKeyCode() == KeyEvent.VK_UP)
-                    Game.increaseDifficulty(); // 난이도 증가
-                else if(e.getKeyCode() == KeyEvent.VK_DOWN)
-                    Game.decreaseDifficulty(); //난이도 감소
+                handleLevelSettingsState(e);
                 break;
+            default:
+                break;
+        }
+    }
+
+    // 상태별 핸들러 메서드
+    private void handleGameOverState(KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
+            System.exit(0);
+        else if (e.getKeyCode() == KeyEvent.VK_SPACE || e.getKeyCode() == KeyEvent.VK_ENTER)
+            restartGame();
+    }
+
+    private void handlePlayingState(KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
+            System.exit(0);
+        else if (e.getKeyCode() == KeyEvent.VK_P)
+            GameState.changeState(GameState.PAUSED);
+    }
+
+    private void handlePausedState(KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_P)
+            GameState.changeState(GameState.PLAYING);
+    }
+
+    private void handleMainMenuState(KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
+            System.exit(0);
+        else if (e.getKeyCode() == KeyEvent.VK_L)
+            GameState.changeState(GameState.LEVEL_SETTINGS);
+    }
+
+    private void handleLevelSettingsState(KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_ESCAPE || e.getKeyCode() == KeyEvent.VK_L) {
+            GameState.changeState(GameState.MAIN_MENU);
+            Game.resetLevel();
+        } else if (e.getKeyCode() == KeyEvent.VK_UP) {
+            Game.increaseDifficulty();
+        } else if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+            Game.decreaseDifficulty();
         }
     }
 
@@ -376,17 +382,16 @@ public class Framework extends Canvas{
      * @param e MouseEvent
      */
     @Override
-    public void mouseClicked(MouseEvent e)
-    {
-        switch (gameState)
-        {
+    public void mouseClicked(MouseEvent e) {
+        switch (GameState.getCurrentState()) {
+
             case MAIN_MENU:
-                if(e.getButton() == MouseEvent.BUTTON1)
-                    newGame();
-                break;
             case LEVEL_SETTINGS:
                 if(e.getButton() == MouseEvent.BUTTON1)
                     newGame();
+                break;
+            default:
+
                 break;
         }
     }
